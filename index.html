@@ -44,8 +44,8 @@
             <div class="result-stars" id="result-stars"></div>
 
             <div class="result-animals">
-                <span style="font-size: 4rem;">🦊</span>
-                <span style="font-size: 4rem;">🦔</span>
+                <span class="result-animal-icon">🦊</span>
+                <span class="result-animal-icon">🦔</span>
             </div>
 
             <div class="stats-divider"></div>
@@ -95,14 +95,14 @@
         <div id="modal-overlay" class="modal-overlay hidden">
             <div class="modal">
                 <h2 id="modal-title">How to Play</h2>
-                <div id="modal-content" style="text-align: left; margin-bottom: 20px;">
+                <div id="modal-content" class="modal-content-wrapper">
                     <p>🦊 <strong>Reunite the Fox & Hedgehog!</strong> 🦔</p>
-                    <ul style="list-style-type: none; padding: 0;">
-                        <li style="margin-bottom: 10px;">1. Drag letters to form valid words in every row and column.</li>
-                        <li style="margin-bottom: 10px;">2. 🟩 <strong>Green</strong>: Correct letter in the correct spot.</li>
-                        <li style="margin-bottom: 10px;">3. 🟨 <strong>Yellow</strong>: Correct letter for that row OR column, but wrong spot.</li>
-                        <li style="margin-bottom: 10px;">4. Animals and holes break up words.</li>
-                        <li style="margin-bottom: 10px;">5. Find all words and connect the animals (adjacent or diagonal) to win!</li>
+                    <ul class="modal-list">
+                        <li class="modal-list-item">1. Drag letters to form valid words in every row and column.</li>
+                        <li class="modal-list-item">2. 🟩 <strong>Green</strong>: Correct letter in the correct spot.</li>
+                        <li class="modal-list-item">3. 🟨 <strong>Yellow</strong>: Correct letter for that row OR column, but wrong spot.</li>
+                        <li class="modal-list-item">4. Animals and holes break up words.</li>
+                        <li class="modal-list-item">5. Find all words and connect the animals (adjacent or diagonal) to win!</li>
                     </ul>
                 </div>
                 <button id="modal-close">Got it!</button>
@@ -110,14 +110,14 @@
         </div>
 
         <div id="loading-overlay" class="modal-overlay">
-            <div class="modal" style="width: auto; padding: 20px;">
+            <div class="modal loading-modal">
                 <h2>Loading Dictionary...</h2>
-                <div class="spinner" style="margin: 20px auto; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <div class="spinner"></div>
             </div>
         </div>
     </div>
 
-    <script src="dictionary.js"></script>
+
     <script src="script.js"></script>
 </body>
 </html>

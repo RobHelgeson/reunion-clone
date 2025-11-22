@@ -53,24 +53,13 @@ class ReunionGame {
                 this.wordMap.get(w.length).push(w);
             });
 
-            // Add local dictionary as backup/supplement
-            DICTIONARY.forEach(w => {
-                if (w.length >= 3 && w.length <= 7) {
-                    if (!this.wordMap.has(w.length)) this.wordMap.set(w.length, []);
-                    this.wordMap.get(w.length).push(w);
-                }
-            });
+
 
             console.log("Dictionary loaded:", words.length + " words");
         } catch (e) {
-            console.error("Failed to load online dictionary, using local only.", e);
+            console.error("Failed to load online dictionary.", e);
             this.wordMap = new Map();
-            DICTIONARY.forEach(w => {
-                if (w.length >= 3 && w.length <= 7) {
-                    if (!this.wordMap.has(w.length)) this.wordMap.set(w.length, []);
-                    this.wordMap.get(w.length).push(w);
-                }
-            });
+            alert("Failed to load dictionary. Please check your internet connection.");
         }
     }
 
@@ -338,20 +327,7 @@ class ReunionGame {
         return false;
     }
 
-    fillRow(grid, r, len, startCol = 0) {
-        // Deprecated by solveGrid
-        return false;
-    }
 
-    fillCol(grid, c, len, startRow = 0) {
-        // Deprecated by solveGrid
-        return false;
-    }
-
-    getRandomWord(len) {
-        // Deprecated
-        return null;
-    }
 
     useFallbackPuzzle() {
         this.solutionGrid = [
@@ -459,11 +435,15 @@ class ReunionGame {
         // Touch Events for Mobile
         board.addEventListener('touchstart', (e) => {
             if (e.touches.length > 1) return; // Ignore multi-touch
+
             const tileEl = e.target.closest('.tile');
             if (!tileEl) return;
 
             // Prevent dragging correct tiles
             if (tileEl.classList.contains('correct')) return;
+
+            // Prevent default to stop scrolling immediately
+            e.preventDefault();
 
             const tile = this.tiles.find(t => t.id === tileEl.dataset.id);
             if (!tile) return;
@@ -501,6 +481,7 @@ class ReunionGame {
 
         board.addEventListener('touchend', (e) => {
             if (!this.draggedTile) return;
+            e.preventDefault();
 
             const tileEl = document.querySelector(`.tile[data-id="${this.draggedTile.id}"]`);
 
@@ -516,6 +497,40 @@ class ReunionGame {
             this.draggedTile = null;
             // Re-render will restore transitions and snap to grid
             this.render();
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            if(confirm('Start a new puzzle?')) {
+                this.loadLevel();
+                this.hideResults();
+            }
+        });
+
+        document.getElementById('help-btn').addEventListener('click', () => {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        });
+
+        document.getElementById('modal-close').addEventListener('click', () => {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        });
+
+        // Navigation
+        document.getElementById('nav-puzzle').addEventListener('click', () => {
+            this.scrollToSection('puzzle-section');
+            this.updateNav('nav-puzzle');
+        });
+
+        document.getElementById('nav-results').addEventListener('click', () => {
+            this.showResults(false); // Show stats, false = not a new win
+            this.scrollToSection('results-section');
+            this.updateNav('nav-results');
+        });
+
+        document.getElementById('next-puzzle-btn').addEventListener('click', () => {
+            this.loadLevel();
+            this.hideResults();
+            this.scrollToSection('puzzle-section');
+            this.updateNav('nav-puzzle');
         });
     }
 
@@ -593,40 +608,7 @@ class ReunionGame {
         this.checkWin();
     }
 
-        document.getElementById('reset-btn').addEventListener('click', () => {
-            if(confirm('Start a new puzzle?')) {
-                this.loadLevel();
-                this.hideResults();
-            }
-        });
 
-        document.getElementById('help-btn').addEventListener('click', () => {
-            document.getElementById('modal-overlay').classList.remove('hidden');
-        });
-
-        document.getElementById('modal-close').addEventListener('click', () => {
-            document.getElementById('modal-overlay').classList.add('hidden');
-        });
-
-        // Navigation
-        document.getElementById('nav-puzzle').addEventListener('click', () => {
-            this.scrollToSection('puzzle-section');
-            this.updateNav('nav-puzzle');
-        });
-
-        document.getElementById('nav-results').addEventListener('click', () => {
-            this.showResults(false); // Show stats, false = not a new win
-            this.scrollToSection('results-section');
-            this.updateNav('nav-results');
-        });
-
-        document.getElementById('next-puzzle-btn').addEventListener('click', () => {
-            this.loadLevel();
-            this.hideResults();
-            this.scrollToSection('puzzle-section');
-            this.updateNav('nav-puzzle');
-        });
-    }
 
     updateUI() {
         document.getElementById('move-count').textContent = this.moves;

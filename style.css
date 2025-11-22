@@ -118,6 +118,7 @@ h1 {
     padding: var(--gap);
     border-radius: 12px;
     position: relative;
+    touch-action: none; /* Prevent browser scrolling on the board */
 }
 
 .tile-slot {
@@ -177,14 +178,6 @@ h1 {
     background-color: transparent;
     font-size: 3.5rem;
     box-shadow: none; /* Remove shadow for cleaner look */
-}
-
-.tile.animal.fox {
-    background-color: transparent;
-}
-
-.tile.animal.hedgehog {
-    background-color: transparent;
 }
 
 .modal-overlay {
@@ -496,4 +489,38 @@ h1 {
     :root {
         --tile-size: 50px;
     }
+}
+
+/* Refactored Inline Styles */
+.result-animal-icon {
+    font-size: 4rem;
+}
+
+.modal-content-wrapper {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.modal-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.modal-list-item {
+    margin-bottom: 10px;
+}
+
+.loading-modal {
+    width: auto;
+    padding: 20px;
+}
+
+.spinner {
+    margin: 20px auto;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
