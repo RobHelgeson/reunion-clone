@@ -20,6 +20,9 @@
                 <button id="reset-btn" class="nav-icon-btn" title="New Puzzle">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 </button>
+                <button id="settings-btn" class="nav-icon-btn" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
                 <button id="help-btn" class="nav-icon-btn" title="How to Play">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </button>
@@ -96,7 +99,7 @@
             <div class="modal">
                 <h2 id="modal-title">How to Play</h2>
                 <div id="modal-content" class="modal-content-wrapper">
-                    <p>🦊 <strong>Reunite the Fox & Hedgehog!</strong> 🦔</p>
+                    <p>🦊 <strong>Reunite the Fox &amp; Hedgehog!</strong> 🦔</p>
                     <ul class="modal-list">
                         <li class="modal-list-item">1. Drag letters to form valid words in every row and column.</li>
                         <li class="modal-list-item">2. 🟩 <strong>Green</strong>: Correct letter in the correct spot.</li>
@@ -109,6 +112,25 @@
             </div>
         </div>
 
+        <div id="settings-overlay" class="modal-overlay hidden">
+            <div class="modal">
+                <h2>Settings</h2>
+                <div class="modal-content-wrapper">
+                    <div class="settings-option">
+                        <div class="setting-info">
+                            <div class="setting-label">Sound Effects</div>
+                            <div class="setting-description">Play sounds for moves, correct letters, and wins</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sound-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <button id="settings-close">Done</button>
+            </div>
+        </div>
+
         <div id="loading-overlay" class="modal-overlay">
             <div class="modal loading-modal">
                 <h2>Loading Dictionary...</h2>
@@ -118,6 +140,7 @@
     </div>
 
 
+    <script src="sound_manager.js"></script>
     <script src="puzzle_generator.js"></script>
     <script src="game_rules.js"></script>
     <script src="input_handler.js"></script>

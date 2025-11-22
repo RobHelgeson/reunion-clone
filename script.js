@@ -18,6 +18,8 @@ class ReunionGame {
 
         this.puzzleGenerator = new PuzzleGenerator();
         this.inputHandler = new InputHandler(this);
+        this.soundManager = new SoundManager();
+        this.correctTiles = new Set(); // Track which tiles are currently correct
 
         this.init();
     }
@@ -173,7 +175,7 @@ class ReunionGame {
         this.moves = 0;
         document.getElementById('nav-results').classList.add('disabled');
         this.updateUI();
-        this.render();
+        this.render(true); // Silent during initial load
 
         // Save the initial puzzle state
         this.saveState();
@@ -184,7 +186,7 @@ class ReunionGame {
         if (idx !== -1) slots.splice(idx, 1);
     }
 
-    render() {
+    render(silent = false) {
         const board = document.getElementById('game-board');
         const existingTiles = document.querySelectorAll('.tile');
         existingTiles.forEach(t => t.remove());
@@ -205,7 +207,7 @@ class ReunionGame {
             board.appendChild(el);
         });
 
-        this.updateColors();
+        this.updateColors(silent);
     }
 
     updateTilePosition(el, r, c) {
@@ -235,6 +237,25 @@ class ReunionGame {
             document.getElementById('modal-overlay').classList.add('hidden');
         });
 
+        // Settings
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            document.getElementById('settings-overlay').classList.remove('hidden');
+            // Update toggle state
+            document.getElementById('sound-toggle').checked = this.soundManager.isEnabled();
+        });
+
+        document.getElementById('settings-close').addEventListener('click', () => {
+            document.getElementById('settings-overlay').classList.add('hidden');
+        });
+
+        document.getElementById('sound-toggle').addEventListener('change', (e) => {
+            this.soundManager.toggle();
+            // Play a test sound when enabling
+            if (e.target.checked) {
+                this.soundManager.playTileMove();
+            }
+        });
+
         // Navigation
         document.getElementById('nav-puzzle').addEventListener('click', () => {
             this.scrollToSection('puzzle-section');
@@ -257,11 +278,17 @@ class ReunionGame {
 
     attemptMove(tile, targetR, targetC) {
         // If invalid target or same position, ignore
-        if (targetR === undefined || targetC === undefined) return;
+        if (targetR === undefined || targetC === undefined) {
+            this.soundManager.playError();
+            return;
+        }
         if (tile.r === targetR && tile.c === targetC) return;
 
         // Check if hole
-        if (this.isHole(targetR, targetC)) return;
+        if (this.isHole(targetR, targetC)) {
+            this.soundManager.playError();
+            return;
+        }
 
         const occupant = this.tiles.find(t => t.r === targetR && t.c === targetC);
 
@@ -269,6 +296,7 @@ class ReunionGame {
             // Check if occupant is a correct letter (locked)
             const occupantEl = document.querySelector(`.tile[data-id="${occupant.id}"]`);
             if (occupantEl && occupantEl.classList.contains('correct')) {
+                this.soundManager.playError();
                 return;
             }
 
@@ -282,8 +310,9 @@ class ReunionGame {
         tile.c = targetC;
 
         this.moves++;
+        this.soundManager.playTileMove();
         this.updateUI();
-        this.render();
+        this.render(); // Allow sounds during moves
         this.checkWin();
 
         // Save state after every move
@@ -294,7 +323,13 @@ class ReunionGame {
         document.getElementById('move-count').textContent = this.moves;
     }
 
-    updateColors() {
+    updateColors(silent = false) {
+        // Track which tiles were already correct BEFORE this update
+        const previouslyCorrect = new Set(this.correctTiles);
+
+        // Clear the current set
+        this.correctTiles.clear();
+
         // Reset classes
         document.querySelectorAll('.tile').forEach(el => {
             el.classList.remove('correct', 'present');
@@ -302,9 +337,21 @@ class ReunionGame {
 
         const { greens, yellows } = GameRules.calculateColors(this.tiles, this.solutionGrid, this.gridSize);
 
+        // Track newly green tiles for sound effect
+        let hasNewGreens = false;
+
         greens.forEach(id => {
             const el = document.querySelector(`.tile[data-id="${id}"]`);
-            if(el) el.classList.add('correct');
+            if(el) {
+                // Add to current correct set
+                this.correctTiles.add(id);
+
+                // Check if this is newly green (wasn't in the previous set)
+                if (!previouslyCorrect.has(id)) {
+                    hasNewGreens = true;
+                }
+                el.classList.add('correct');
+            }
         });
 
         yellows.forEach(id => {
@@ -313,6 +360,11 @@ class ReunionGame {
                 el.classList.add('present');
             }
         });
+
+        // Play sound if there are new correct letters (but not during silent renders)
+        if (hasNewGreens && !silent) {
+            this.soundManager.playCorrect();
+        }
     }
 
     checkWin() {
@@ -323,6 +375,9 @@ class ReunionGame {
     }
 
     handleWin() {
+        // Play win sound
+        this.soundManager.playWin();
+
         // Save stats
         GameRules.saveStats(this.moves, true);
 
@@ -408,7 +463,7 @@ class ReunionGame {
 
             // Update UI and render
             this.updateUI();
-            this.render();
+            this.render(true); // Silent when loading saved state
 
             // Check if puzzle was already solved
             this.checkWin();
