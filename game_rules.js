@@ -44,111 +44,86 @@ class GameRules {
         const greens = new Set();
         const yellows = new Set();
 
-        // 1. Identify Green (Correct) tiles
+        // Map tile positions for quick lookup
+        const tileMap = new Map();
         tiles.forEach(tile => {
-            if (tile.isAnimal) return;
-
-            const targetChar = solutionGrid[tile.r][tile.c];
-            if (targetChar === tile.char) {
-                greens.add(tile.id);
+            if (!tile.isAnimal) {
+                tileMap.set(`${tile.r},${tile.c}`, tile);
             }
         });
 
-        // Helper to process segments
-        const processSegment = (start, end, type) => {
-            // Count targets in solution
-            const targetCounts = {};
-            const segmentTiles = [];
+        // Track yellow status per tile (from row and column evaluations)
+        const yellowFromRow = new Set();
+        const yellowFromCol = new Set();
 
-            if (type === 'row') {
-                for (let c = start.c; c <= end.c; c++) {
-                    const char = solutionGrid[start.r][c];
-                    targetCounts[char] = (targetCounts[char] || 0) + 1;
+        // Helper: Evaluate a single word (row or column)
+        const evaluateWord = (positions, yellowSet) => {
+            // Build solution word and current word
+            const solutionWord = [];
+            const currentTiles = [];
 
-                    // Find tile at this position
-                    const tile = tiles.find(t => t.r === start.r && t.c === c);
-                    if (tile) segmentTiles.push(tile);
+            positions.forEach(([r, c]) => {
+                const solutionChar = solutionGrid[r][c];
+                solutionWord.push(solutionChar);
+
+                const tile = tileMap.get(`${r},${c}`);
+                if (tile) {
+                    currentTiles.push({ tile, solutionChar, r, c });
                 }
-            } else {
-                for (let r = start.r; r <= end.r; r++) {
-                    const char = solutionGrid[r][start.c];
-                    targetCounts[char] = (targetCounts[char] || 0) + 1;
+            });
 
-                    const tile = tiles.find(t => t.r === r && t.c === start.c);
-                    if (tile) segmentTiles.push(tile);
-                }
-            }
+            // Count letter budget from solution
+            const budget = {};
+            solutionWord.forEach(char => {
+                budget[char] = (budget[char] || 0) + 1;
+            });
 
-            // Decrement for Greens
-            segmentTiles.forEach(tile => {
-                if (greens.has(tile.id)) {
-                    if (targetCounts[tile.char] > 0) {
-                        targetCounts[tile.char]--;
+            // First pass: Mark greens and consume budget
+            currentTiles.forEach(({ tile, solutionChar }) => {
+                if (tile.char === solutionChar) {
+                    greens.add(tile.id);
+                    if (budget[tile.char] > 0) {
+                        budget[tile.char]--;
                     }
                 }
             });
 
-            // Assign Yellows to remaining
-            // We sort tiles by position to ensure left-to-right / top-to-bottom priority
-            segmentTiles.sort((a, b) => {
-                if (a.r !== b.r) return a.r - b.r;
-                return a.c - b.c;
-            });
-
-            segmentTiles.forEach(tile => {
-                if (!greens.has(tile.id) && !tile.isAnimal) {
-                    if (targetCounts[tile.char] > 0) {
-                        yellows.add(tile.id);
-                        targetCounts[tile.char]--;
+            // Second pass: Mark yellows from remaining budget
+            currentTiles.forEach(({ tile, solutionChar }) => {
+                if (!greens.has(tile.id)) {
+                    // Letter is present in word but not in correct position
+                    if (budget[tile.char] > 0) {
+                        yellowSet.add(tile.id);
+                        budget[tile.char]--;
                     }
                 }
             });
         };
 
-        const isHole = (r, c) => {
-             const holes = [
-                { r: 1, c: 1 }, { r: 1, c: 3 },
-                { r: 3, c: 1 }, { r: 3, c: 3 },
-                { r: 5, c: 1 }, { r: 5, c: 3 }
-            ];
-            return holes.some(h => h.r === r && h.c === c);
-        };
-        const isAnimalChar = (char) => ['🦊', '🦔'].includes(char);
-
-        // 2. Identify Yellows (Present) - Row by Row
-        for (let r = 0; r < gridSize.rows; r++) {
+        // Process the 4 horizontal words (rows 0, 2, 4, 6)
+        const wordRows = [0, 2, 4, 6];
+        wordRows.forEach(r => {
+            const positions = [];
             for (let c = 0; c < gridSize.cols; c++) {
-                // Skip if not start of a valid segment
-                if (isHole(r, c) || isAnimalChar(solutionGrid[r][c])) continue;
-
-                // Find end of segment
-                let endC = c;
-                while (endC < gridSize.cols && !isHole(r, endC) && !isAnimalChar(solutionGrid[r][endC])) {
-                    endC++;
-                }
-                // Segment is from c to endC - 1
-                processSegment({r, c}, {r, c: endC - 1}, 'row');
-
-                // Advance c
-                c = endC;
+                positions.push([r, c]);
             }
-        }
+            evaluateWord(positions, yellowFromRow);
+        });
 
-        // 3. Identify Yellows (Present) - Col by Col
-        for (let c = 0; c < gridSize.cols; c++) {
+        // Process the 3 vertical words (columns 0, 2, 4)
+        const wordCols = [0, 2, 4];
+        wordCols.forEach(c => {
+            const positions = [];
             for (let r = 0; r < gridSize.rows; r++) {
-                if (isHole(r, c) || isAnimalChar(solutionGrid[r][c])) continue;
-
-                let endR = r;
-                while (endR < gridSize.rows && !isHole(endR, c) && !isAnimalChar(solutionGrid[endR][c])) {
-                    endR++;
-                }
-
-                processSegment({r, c}, {r: endR - 1, c}, 'col');
-
-                r = endR;
+                positions.push([r, c]);
             }
-        }
+            evaluateWord(positions, yellowFromCol);
+        });
+
+        // Combine yellow results with OR logic
+        // A tile is yellow if it's yellow in EITHER its row OR its column
+        yellowFromRow.forEach(id => yellows.add(id));
+        yellowFromCol.forEach(id => yellows.add(id));
 
         return { greens, yellows };
     }
