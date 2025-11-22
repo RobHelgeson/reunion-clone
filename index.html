@@ -11,7 +11,6 @@
 </head>
 <body>
     <div class="app-container">
-    <div class="app-container">
         <nav class="game-nav">
             <div class="nav-group">
                 <button id="nav-puzzle" class="nav-item active">PUZZLE</button>
@@ -96,7 +95,16 @@
         <div id="modal-overlay" class="modal-overlay hidden">
             <div class="modal">
                 <h2 id="modal-title">How to Play</h2>
-                <div id="modal-content"></div>
+                <div id="modal-content" style="text-align: left; margin-bottom: 20px;">
+                    <p>🦊 <strong>Reunite the Fox & Hedgehog!</strong> 🦔</p>
+                    <ul style="list-style-type: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">1. Drag letters to form valid words in every row and column.</li>
+                        <li style="margin-bottom: 10px;">2. 🟩 <strong>Green</strong>: Correct letter in the correct spot.</li>
+                        <li style="margin-bottom: 10px;">3. 🟨 <strong>Yellow</strong>: Correct letter for that row OR column, but wrong spot.</li>
+                        <li style="margin-bottom: 10px;">4. Animals and holes break up words.</li>
+                        <li style="margin-bottom: 10px;">5. Find all words and connect the animals (adjacent or diagonal) to win!</li>
+                    </ul>
+                </div>
                 <button id="modal-close">Got it!</button>
             </div>
         </div>

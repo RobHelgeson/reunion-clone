@@ -508,6 +508,14 @@ class ReunionGame {
             }
         });
 
+        document.getElementById('help-btn').addEventListener('click', () => {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        });
+
+        document.getElementById('modal-close').addEventListener('click', () => {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        });
+
         // Navigation
         document.getElementById('nav-puzzle').addEventListener('click', () => {
             this.scrollToSection('puzzle-section');
