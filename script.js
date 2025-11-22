@@ -23,9 +23,15 @@ class ReunionGame {
     }
 
     async init() {
-        this.setupBoard();
         await this.puzzleGenerator.init();
-        await this.loadLevel();
+
+        // Try to load saved state, otherwise generate new puzzle
+        const loaded = this.loadState();
+        if (!loaded) {
+            this.setupBoard();
+            await this.loadLevel();
+        }
+
         this.inputHandler.setupDragAndDrop(document.getElementById('game-board'));
         this.setupUIEventListeners();
         document.getElementById('loading-overlay').classList.add('hidden');
@@ -76,6 +82,9 @@ class ReunionGame {
         }
 
         this.solutionGrid = grid;
+
+        // Clear any saved state when starting a new puzzle
+        this.clearState();
 
         // Now that solutionGrid is set, create tiles
         const availableSlots = [];
@@ -165,6 +174,9 @@ class ReunionGame {
         document.getElementById('nav-results').classList.add('disabled');
         this.updateUI();
         this.render();
+
+        // Save the initial puzzle state
+        this.saveState();
     }
 
     removeSlot(slots, r, c) {
@@ -273,6 +285,9 @@ class ReunionGame {
         this.updateUI();
         this.render();
         this.checkWin();
+
+        // Save state after every move
+        this.saveState();
     }
 
     updateUI() {
@@ -358,6 +373,55 @@ class ReunionGame {
     updateNav(activeId) {
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.getElementById(activeId).classList.add('active');
+    }
+
+    saveState() {
+        const state = {
+            solutionGrid: this.solutionGrid,
+            tiles: this.tiles.map(t => ({
+                id: t.id,
+                char: t.char,
+                type: t.type,
+                r: t.r,
+                c: t.c,
+                targetR: t.targetR,
+                targetC: t.targetC,
+                isAnimal: t.isAnimal
+            })),
+            moves: this.moves
+        };
+        localStorage.setItem('reunion_current_puzzle', JSON.stringify(state));
+    }
+
+    loadState() {
+        const saved = localStorage.getItem('reunion_current_puzzle');
+        if (!saved) return false;
+
+        try {
+            const state = JSON.parse(saved);
+            this.solutionGrid = state.solutionGrid;
+            this.tiles = state.tiles;
+            this.moves = state.moves;
+
+            // Setup board DOM elements first
+            this.setupBoard();
+
+            // Update UI and render
+            this.updateUI();
+            this.render();
+
+            // Check if puzzle was already solved
+            this.checkWin();
+
+            return true;
+        } catch (e) {
+            console.error('Failed to load saved state:', e);
+            return false;
+        }
+    }
+
+    clearState() {
+        localStorage.removeItem('reunion_current_puzzle');
     }
 }
 
