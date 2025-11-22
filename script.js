@@ -11,19 +11,7 @@ class ReunionGame {
             hedgehog: { r: 6, c: 2 }
         };
 
-        // Valid solution with words >= 3 letters
-        // C0: SHEEP (5), C2: AMONGST (7), C4: BAYONET (7)
-        // R0: LAMB (4), R2: STORY (5), R4: EAGLE (5), R6: PLANT (5)
-        // Animals at (0,0) and (1,0)
-        this.solutionGrid = [
-            ['🦊', 'L', 'A', 'M', 'B'],
-            ['🦔', null, 'M', null, 'A'],
-            ['S', 'T', 'O', 'R', 'Y'],
-            ['H', null, 'N', null, 'O'],
-            ['E', 'A', 'G', 'L', 'E'],
-            ['E', null, 'S', null, 'E'],
-            ['P', 'L', 'A', 'N', 'T']
-        ];
+        this.solutionGrid = null;
 
         this.tiles = [];
         this.moves = 0;
@@ -618,9 +606,10 @@ class ReunionGame {
             el.classList.remove('correct', 'present');
         });
 
-        // 1. Identify Green (Correct) tiles
         const greens = new Set();
+        const yellows = new Set();
 
+        // 1. Identify Green (Correct) tiles
         this.tiles.forEach(tile => {
             if (tile.isAnimal) return;
 
@@ -632,19 +621,46 @@ class ReunionGame {
             }
         });
 
-        // 2. Identify Yellows (Present)
-        // Scoped to the "Word Segment" in the solution.
-        // Rule: Must be present in EITHER the Row Word OR the Column Word.
+        // 2. Identify Yellows (Present) - Row by Row
+        for (let r = 0; r < this.gridSize.rows; r++) {
+            for (let c = 0; c < this.gridSize.cols; c++) {
+                // Skip if not start of a valid segment
+                if (this.isHole(r, c) || this.isAnimalChar(this.solutionGrid[r][c])) continue;
 
-        this.tiles.forEach(tile => {
-            if (tile.isAnimal || greens.has(tile.id)) return;
+                // Find end of segment
+                let endC = c;
+                while (endC < this.gridSize.cols && !this.isHole(r, endC) && !this.isAnimalChar(this.solutionGrid[r][endC])) {
+                    endC++;
+                }
+                // Segment is from c to endC - 1
+                this.processSegment(greens, yellows, {r, c}, {r, c: endC - 1}, 'row');
 
-            const inRow = this.checkSegment(tile, 'row', greens);
-            const inCol = this.checkSegment(tile, 'col', greens);
+                // Advance c
+                c = endC;
+            }
+        }
 
-            if (inRow || inCol) {
-                const el = document.querySelector(`.tile[data-id="${tile.id}"]`);
-                if(el) el.classList.add('present');
+        // 3. Identify Yellows (Present) - Col by Col
+        for (let c = 0; c < this.gridSize.cols; c++) {
+            for (let r = 0; r < this.gridSize.rows; r++) {
+                if (this.isHole(r, c) || this.isAnimalChar(this.solutionGrid[r][c])) continue;
+
+                let endR = r;
+                while (endR < this.gridSize.rows && !this.isHole(endR, c) && !this.isAnimalChar(this.solutionGrid[endR][c])) {
+                    endR++;
+                }
+
+                this.processSegment(greens, yellows, {r, c}, {r: endR - 1, c}, 'col');
+
+                r = endR;
+            }
+        }
+
+        // Apply Yellow classes
+        yellows.forEach(id => {
+            const el = document.querySelector(`.tile[data-id="${id}"]`);
+            if (el && !el.classList.contains('correct')) {
+                el.classList.add('present');
             }
         });
     }
@@ -653,80 +669,54 @@ class ReunionGame {
         return ['🦊', '🦔'].includes(char);
     }
 
-    checkSegment(tile, type, greens) {
-        // Find the boundaries of the segment in the SOLUTION grid
-        // A segment is broken by holes or animals in the solution.
-
-        let start, end, fixedCoord;
-        const grid = this.solutionGrid;
+    processSegment(greens, yellows, start, end, type) {
+        // Count targets in solution
+        const targetCounts = {};
+        const segmentTiles = [];
 
         if (type === 'row') {
-            fixedCoord = tile.r;
-            // Scan left
-            let c = tile.c;
-            while (c >= 0 && !this.isHole(fixedCoord, c) && !this.isAnimalChar(grid[fixedCoord][c])) c--;
-            start = c + 1;
+            for (let c = start.c; c <= end.c; c++) {
+                const char = this.solutionGrid[start.r][c];
+                targetCounts[char] = (targetCounts[char] || 0) + 1;
 
-            // Scan right
-            c = tile.c;
-            while (c < this.gridSize.cols && !this.isHole(fixedCoord, c) && !this.isAnimalChar(grid[fixedCoord][c])) c++;
-            end = c - 1;
+                // Find tile at this position
+                const tile = this.tiles.find(t => t.r === start.r && t.c === c);
+                if (tile) segmentTiles.push(tile);
+            }
         } else {
-            fixedCoord = tile.c;
-            // Scan up
-            let r = tile.r;
-            while (r >= 0 && !this.isHole(r, fixedCoord) && !this.isAnimalChar(grid[r][fixedCoord])) r--;
-            start = r + 1;
+            for (let r = start.r; r <= end.r; r++) {
+                const char = this.solutionGrid[r][start.c];
+                targetCounts[char] = (targetCounts[char] || 0) + 1;
 
-            // Scan down
-            r = tile.r;
-            while (r < this.gridSize.rows && !this.isHole(r, fixedCoord) && !this.isAnimalChar(grid[r][fixedCoord])) r++;
-            end = r - 1;
-        }
-
-        // If the tile is sitting on a hole/animal spot (shouldn't happen for letters usually, but safety check)
-        if (start > end) return false;
-
-        // Collect targets in this segment
-        const targets = [];
-        for (let i = start; i <= end; i++) {
-            const char = (type === 'row') ? grid[fixedCoord][i] : grid[i][fixedCoord];
-            targets.push(char);
-        }
-
-        // If letter not in targets, definitely not yellow
-        if (!targets.includes(tile.char)) return false;
-
-        // Advanced check: Handle duplicates?
-        // "If there are two 'A's in the word, and one is Green, the second 'A' elsewhere should be Yellow."
-        // "If there is one 'A' in the word, and it's already Green, the second 'A' elsewhere should be White."
-
-        // Count occurrences of tile.char in the solution segment
-        const totalInSegment = targets.filter(c => c === tile.char).length;
-
-        // Count how many of those are already matched by Green tiles in this segment
-        let greensInSegment = 0;
-        for (let i = start; i <= end; i++) {
-            const r = (type === 'row') ? fixedCoord : i;
-            const c = (type === 'row') ? i : fixedCoord;
-
-            // Find the tile at this position
-            const t = this.tiles.find(t => t.r === r && t.c === c);
-            if (t && t.char === tile.char && greens.has(t.id)) {
-                greensInSegment++;
+                const tile = this.tiles.find(t => t.r === r && t.c === start.c);
+                if (tile) segmentTiles.push(tile);
             }
         }
 
-        // If we have satisfied all instances with greens, then this extra one is not yellow.
-        // BUT, we also need to account for other Yellows?
-        // Usually, we prioritize: Green > Yellow (left-to-right or top-to-bottom) > White.
-        // But for simple "Present" logic without strict ordering:
-        // If (Total Targets > Total Greens), then there is at least one "unclaimed" target.
-        // So this tile can be yellow.
-        // This is a simplification (it doesn't handle "3 tiles for 2 spots" perfectly where 2 should be yellow and 1 white),
-        // but it's much better than the global row check.
+        // Decrement for Greens
+        segmentTiles.forEach(tile => {
+            if (greens.has(tile.id)) {
+                if (targetCounts[tile.char] > 0) {
+                    targetCounts[tile.char]--;
+                }
+            }
+        });
 
-        return totalInSegment > greensInSegment;
+        // Assign Yellows to remaining
+        // We sort tiles by position to ensure left-to-right / top-to-bottom priority
+        segmentTiles.sort((a, b) => {
+            if (a.r !== b.r) return a.r - b.r;
+            return a.c - b.c;
+        });
+
+        segmentTiles.forEach(tile => {
+            if (!greens.has(tile.id) && !tile.isAnimal) {
+                if (targetCounts[tile.char] > 0) {
+                    yellows.add(tile.id);
+                    targetCounts[tile.char]--;
+                }
+            }
+        });
     }
 
     checkWin() {
