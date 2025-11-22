@@ -1,0 +1,754 @@
+class ReunionGame {
+    constructor() {
+        this.gridSize = { rows: 7, cols: 5 };
+        this.holes = [
+            { r: 1, c: 1 }, { r: 1, c: 3 },
+            { r: 3, c: 1 }, { r: 3, c: 3 },
+            { r: 5, c: 1 }, { r: 5, c: 3 }
+        ];
+        this.startPositions = {
+            fox: { r: 0, c: 2 },
+            hedgehog: { r: 6, c: 2 }
+        };
+
+        // Valid solution with words >= 3 letters
+        // C0: SHEEP (5), C2: AMONGST (7), C4: BAYONET (7)
+        // R0: LAMB (4), R2: STORY (5), R4: EAGLE (5), R6: PLANT (5)
+        // Animals at (0,0) and (1,0)
+        this.solutionGrid = [
+            ['🦊', 'L', 'A', 'M', 'B'],
+            ['🦔', null, 'M', null, 'A'],
+            ['S', 'T', 'O', 'R', 'Y'],
+            ['H', null, 'N', null, 'O'],
+            ['E', 'A', 'G', 'L', 'E'],
+            ['E', null, 'S', null, 'E'],
+            ['P', 'L', 'A', 'N', 'T']
+        ];
+
+        this.tiles = [];
+        this.moves = 0;
+        this.draggedTile = null;
+
+        this.init();
+    }
+
+    async init() {
+        this.setupBoard();
+        await this.loadDictionary();
+        await this.loadLevel();
+        this.render();
+        this.setupEventListeners();
+        document.getElementById('loading-overlay').classList.add('hidden');
+    }
+
+    async loadDictionary() {
+        try {
+            const response = await fetch('https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-no-swears.txt');
+            const text = await response.text();
+            const words = text.split('\n').map(w => w.trim().toUpperCase()).filter(w => w.length >= 3 && w.length <= 7);
+
+            // Organize by length
+            this.wordMap = new Map();
+            words.forEach(w => {
+                if (!this.wordMap.has(w.length)) this.wordMap.set(w.length, []);
+                this.wordMap.get(w.length).push(w);
+            });
+
+            // Add local dictionary as backup/supplement
+            DICTIONARY.forEach(w => {
+                if (w.length >= 3 && w.length <= 7) {
+                    if (!this.wordMap.has(w.length)) this.wordMap.set(w.length, []);
+                    this.wordMap.get(w.length).push(w);
+                }
+            });
+
+            console.log("Dictionary loaded:", words.length + " words");
+        } catch (e) {
+            console.error("Failed to load online dictionary, using local only.", e);
+            this.wordMap = new Map();
+            DICTIONARY.forEach(w => {
+                if (w.length >= 3 && w.length <= 7) {
+                    if (!this.wordMap.has(w.length)) this.wordMap.set(w.length, []);
+                    this.wordMap.get(w.length).push(w);
+                }
+            });
+        }
+    }
+
+    setupBoard() {
+        const board = document.getElementById('game-board');
+        board.style.gridTemplateColumns = `repeat(${this.gridSize.cols}, var(--tile-size))`;
+        board.style.gridTemplateRows = `repeat(${this.gridSize.rows}, var(--tile-size))`;
+
+        board.innerHTML = '';
+
+        for (let r = 0; r < this.gridSize.rows; r++) {
+            for (let c = 0; c < this.gridSize.cols; c++) {
+                const slot = document.createElement('div');
+                slot.className = 'tile-slot';
+                slot.dataset.r = r;
+                slot.dataset.c = c;
+
+                if (this.isHole(r, c)) {
+                    slot.classList.add('hole');
+                }
+
+                board.appendChild(slot);
+            }
+        }
+    }
+
+    isHole(r, c) {
+        return this.holes.some(h => h.r === r && h.c === c);
+    }
+
+    async loadLevel() {
+        this.tiles = [];
+
+        // Try to generate a puzzle
+        let success = false;
+        let attempts = 0;
+        while (!success && attempts < 10) {
+            success = await this.generateAdvancedPuzzle();
+            attempts++;
+        }
+
+        if (!success) {
+            console.warn("Failed to generate advanced puzzle, falling back to hardcoded.");
+            this.useFallbackPuzzle();
+        }
+
+        // Now that solutionGrid is set, create tiles
+        const availableSlots = [];
+
+        for (let r = 0; r < this.gridSize.rows; r++) {
+            for (let c = 0; c < this.gridSize.cols; c++) {
+                const char = this.solutionGrid[r][c];
+                if (char) {
+                    let type = 'letter';
+                    let id = `tile-${r}-${c}`;
+
+                    if (char === '🦊') {
+                        type = 'animal';
+                        id = 'fox';
+                    } else if (char === '🦔') {
+                        type = 'animal';
+                        id = 'hedgehog';
+                    }
+
+                    this.tiles.push({
+                        id,
+                        char,
+                        type,
+                        r: -1,
+                        c: -1,
+                        targetR: r,
+                        targetC: c,
+                        isAnimal: type === 'animal'
+                    });
+                }
+
+                if (!this.isHole(r, c)) {
+                    availableSlots.push({ r, c });
+                }
+            }
+        }
+
+        // Place animals at start positions
+        const fox = this.tiles.find(t => t.id === 'fox');
+        const hedgehog = this.tiles.find(t => t.id === 'hedgehog');
+
+        if (fox) {
+            fox.r = this.startPositions.fox.r;
+            fox.c = this.startPositions.fox.c;
+            this.removeSlot(availableSlots, fox.r, fox.c);
+        }
+        if (hedgehog) {
+            hedgehog.r = this.startPositions.hedgehog.r;
+            hedgehog.c = this.startPositions.hedgehog.c;
+            this.removeSlot(availableSlots, hedgehog.r, hedgehog.c);
+        }
+
+        // Select 5 random letters to be correct at start
+        const letters = this.tiles.filter(t => !t.isAnimal);
+
+        // Filter letters whose target positions are NOT occupied by animals
+        const validCandidates = letters.filter(l => {
+            const blockedByFox = (fox && l.targetR === fox.r && l.targetC === fox.c);
+            const blockedByHedgehog = (hedgehog && l.targetR === hedgehog.r && l.targetC === hedgehog.c);
+            return !blockedByFox && !blockedByHedgehog;
+        });
+
+        // Shuffle candidates to pick random ones
+        this.shuffle(validCandidates);
+        const fixedLetters = validCandidates.slice(0, 5);
+        const fixedIds = new Set(fixedLetters.map(t => t.id));
+
+        // Place fixed letters
+        fixedLetters.forEach(tile => {
+            tile.r = tile.targetR;
+            tile.c = tile.targetC;
+            this.removeSlot(availableSlots, tile.r, tile.c);
+        });
+
+        // Scramble remaining tiles
+        const remainingLetters = letters.filter(t => !fixedIds.has(t.id));
+        this.shuffle(availableSlots);
+
+        remainingLetters.forEach((tile, index) => {
+            if (index < availableSlots.length) {
+                tile.r = availableSlots[index].r;
+                tile.c = availableSlots[index].c;
+            }
+        });
+
+        this.moves = 0;
+        this.updateUI();
+    }
+
+    async generateAdvancedPuzzle() {
+        // Initialize empty grid
+        const grid = Array(7).fill(null).map(() => Array(5).fill(null));
+
+        // 1. Pick Animal Positions
+        // Ensure they don't create gaps < 3 letters
+        const animalConfigs = [
+            [{r:0, c:0}, {r:1, c:0}],
+            [{r:5, c:0}, {r:6, c:0}],
+            [{r:0, c:4}, {r:1, c:4}],
+            [{r:5, c:4}, {r:6, c:4}]
+        ];
+        const config = animalConfigs[Math.floor(Math.random() * animalConfigs.length)];
+
+        grid[config[0].r][config[0].c] = '🦊';
+        grid[config[1].r][config[1].c] = '🦔';
+
+        // 2. Identify Slots
+        const slots = this.identifySlots(grid);
+
+        // 3. Solve
+        // Sort slots by length (longer first) or connectivity?
+        // Let's sort by length descending for now.
+        slots.sort((a, b) => b.len - a.len);
+
+        return this.solveGrid(grid, slots, 0);
+    }
+
+    identifySlots(grid) {
+        const slots = [];
+
+        // Horizontal
+        for (let r = 0; r < 7; r++) {
+            let start = -1;
+            for (let c = 0; c < 5; c++) {
+                if (!this.isHole(r, c) && !this.isAnimal(grid[r][c])) {
+                    if (start === -1) start = c;
+                } else {
+                    if (start !== -1) {
+                        const len = c - start;
+                        if (len >= 3) slots.push({ type: 'row', r, c: start, len });
+                        start = -1;
+                    }
+                }
+            }
+            if (start !== -1) {
+                const len = 5 - start;
+                if (len >= 3) slots.push({ type: 'row', r, c: start, len });
+            }
+        }
+
+        // Vertical
+        for (let c = 0; c < 5; c++) {
+            let start = -1;
+            for (let r = 0; r < 7; r++) {
+                if (!this.isHole(r, c) && !this.isAnimal(grid[r][c])) {
+                    if (start === -1) start = r;
+                } else {
+                    if (start !== -1) {
+                        const len = r - start;
+                        if (len >= 3) slots.push({ type: 'col', r: start, c, len });
+                        start = -1;
+                    }
+                }
+            }
+            if (start !== -1) {
+                const len = 7 - start;
+                if (len >= 3) slots.push({ type: 'col', r: start, c, len });
+            }
+        }
+
+        return slots;
+    }
+
+    isAnimal(char) {
+        return char === '🦊' || char === '🦔';
+    }
+
+    solveGrid(grid, slots, index) {
+        if (index >= slots.length) return true; // All slots filled
+
+        const slot = slots[index];
+
+        // Get current pattern
+        let pattern = '';
+        for(let i=0; i<slot.len; i++) {
+            if (slot.type === 'row') pattern += (grid[slot.r][slot.c + i] || '.');
+            else pattern += (grid[slot.r + i][slot.c] || '.');
+        }
+
+        // Find candidates
+        const regex = new RegExp('^' + pattern + '$');
+        const candidates = (this.wordMap.get(slot.len) || []).filter(w => regex.test(w));
+
+        // Shuffle candidates for randomness
+        this.shuffle(candidates);
+
+        // Try candidates (limit to first 50 to avoid infinite loops)
+        for (let i = 0; i < Math.min(candidates.length, 50); i++) {
+            const word = candidates[i];
+
+            // Apply word
+            const backup = []; // Store overwritten chars to restore on backtrack
+            for(let k=0; k<slot.len; k++) {
+                if (slot.type === 'row') {
+                    backup.push(grid[slot.r][slot.c + k]);
+                    grid[slot.r][slot.c + k] = word[k];
+                } else {
+                    backup.push(grid[slot.r + k][slot.c]);
+                    grid[slot.r + k][slot.c] = word[k];
+                }
+            }
+
+            // Recurse
+            if (this.solveGrid(grid, slots, index + 1)) {
+                this.solutionGrid = grid;
+                return true;
+            }
+
+            // Backtrack
+            for(let k=0; k<slot.len; k++) {
+                if (slot.type === 'row') {
+                    grid[slot.r][slot.c + k] = backup[k];
+                } else {
+                    grid[slot.r + k][slot.c] = backup[k];
+                }
+            }
+        }
+
+        return false;
+    }
+
+    fillRow(grid, r, len, startCol = 0) {
+        // Deprecated by solveGrid
+        return false;
+    }
+
+    fillCol(grid, c, len, startRow = 0) {
+        // Deprecated by solveGrid
+        return false;
+    }
+
+    getRandomWord(len) {
+        // Deprecated
+        return null;
+    }
+
+    useFallbackPuzzle() {
+        this.solutionGrid = [
+            ['🦊', 'L', 'A', 'M', 'B'],
+            ['🦔', null, 'M', null, 'A'],
+            ['S', 'T', 'O', 'R', 'Y'],
+            ['H', null, 'N', null, 'O'],
+            ['E', 'A', 'G', 'L', 'E'],
+            ['E', null, 'S', null, 'E'],
+            ['P', 'L', 'A', 'N', 'T']
+        ];
+    }
+
+    removeSlot(slots, r, c) {
+        const idx = slots.findIndex(s => s.r === r && s.c === c);
+        if (idx !== -1) slots.splice(idx, 1);
+    }
+
+    shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    render() {
+        const board = document.getElementById('game-board');
+        const existingTiles = document.querySelectorAll('.tile');
+        existingTiles.forEach(t => t.remove());
+
+        this.tiles.forEach(tile => {
+            const el = document.createElement('div');
+            el.className = `tile ${tile.type}`;
+            if (tile.id === 'fox') el.classList.add('fox');
+            if (tile.id === 'hedgehog') el.classList.add('hedgehog');
+
+            el.textContent = tile.char;
+            el.dataset.id = tile.id;
+
+            this.updateTilePosition(el, tile.r, tile.c);
+
+            el.draggable = true;
+
+            board.appendChild(el);
+        });
+
+        this.updateColors();
+    }
+
+    updateTilePosition(el, r, c) {
+        const gap = 8;
+        const size = 60;
+        const x = c * (size + gap) + gap;
+        const y = r * (size + gap) + gap;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.transform = 'none'; // Clear any previous transform
+    }
+
+    setupEventListeners() {
+        const board = document.getElementById('game-board');
+
+        board.addEventListener('dragstart', (e) => {
+            const tileEl = e.target.closest('.tile');
+            if (!tileEl) return;
+
+            // Prevent dragging correct tiles
+            if (tileEl.classList.contains('correct')) {
+                e.preventDefault();
+                return;
+            }
+
+            this.draggedTile = this.tiles.find(t => t.id === tileEl.dataset.id);
+            if (!this.draggedTile) return;
+
+            // Delay adding the class so the browser captures the element style BEFORE it changes opacity/scale
+            setTimeout(() => {
+                tileEl.classList.add('dragging');
+            }, 0);
+
+            // Required for Firefox and some other browsers to initiate drag
+            e.dataTransfer.setData('text/plain', tileEl.dataset.id);
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        board.addEventListener('dragend', (e) => {
+            if (!e.target.classList.contains('tile')) return;
+            e.target.classList.remove('dragging');
+            this.draggedTile = null;
+        });
+
+        board.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        board.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!this.draggedTile) return;
+
+            let targetR, targetC;
+
+            // Check if dropped on a tile
+            const targetTileEl = e.target.closest('.tile');
+            if (targetTileEl) {
+                const targetTile = this.tiles.find(t => t.id === targetTileEl.dataset.id);
+                if (targetTile) {
+                    targetR = targetTile.r;
+                    targetC = targetTile.c;
+                }
+            } else {
+                // Check if dropped on a slot
+                const slot = e.target.closest('.tile-slot');
+                if (slot && !slot.classList.contains('hole')) {
+                    targetR = parseInt(slot.dataset.r);
+                    targetC = parseInt(slot.dataset.c);
+                }
+            }
+
+            // If invalid target or same position, ignore
+            if (targetR === undefined || targetC === undefined) return;
+            if (this.draggedTile.r === targetR && this.draggedTile.c === targetC) return;
+
+            // Check if hole (double check, though slots handle this)
+            if (this.isHole(targetR, targetC)) return;
+
+            const occupant = this.tiles.find(t => t.r === targetR && t.c === targetC);
+
+            if (occupant) {
+                // Check if occupant is a correct letter (locked)
+                const occupantEl = document.querySelector(`.tile[data-id="${occupant.id}"]`);
+                if (occupantEl && occupantEl.classList.contains('correct')) {
+                    return;
+                }
+
+                // Swap
+                occupant.r = this.draggedTile.r;
+                occupant.c = this.draggedTile.c;
+            }
+
+            // Move dragged tile
+            this.draggedTile.r = targetR;
+            this.draggedTile.c = targetC;
+
+            this.moves++;
+            this.updateUI();
+            this.render();
+            this.checkWin();
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            if(confirm('Restart puzzle?')) {
+                this.loadLevel();
+                this.render();
+                this.hideResults();
+            }
+        });
+
+        // Navigation
+        document.getElementById('nav-puzzle').addEventListener('click', () => {
+            this.scrollToSection('puzzle-section');
+            this.updateNav('nav-puzzle');
+        });
+
+        document.getElementById('nav-results').addEventListener('click', () => {
+            this.showResults(false); // Show stats, false = not a new win
+            this.scrollToSection('results-section');
+            this.updateNav('nav-results');
+        });
+
+        document.getElementById('next-puzzle-btn').addEventListener('click', () => {
+            this.loadLevel();
+            this.render();
+            this.hideResults();
+            this.scrollToSection('puzzle-section');
+            this.updateNav('nav-puzzle');
+        });
+    }
+
+    updateUI() {
+        document.getElementById('move-count').textContent = this.moves;
+    }
+
+    calculateStars() {
+        if (this.moves < 20) return 3;
+        if (this.moves < 30) return 2;
+        return 1;
+    }
+
+    updateColors() {
+        // Reset classes
+        document.querySelectorAll('.tile').forEach(el => {
+            el.classList.remove('correct', 'present');
+        });
+
+        // 1. Identify Green (Correct) tiles
+        const greens = new Set();
+
+        this.tiles.forEach(tile => {
+            if (tile.isAnimal) return;
+
+            const targetChar = this.solutionGrid[tile.r][tile.c];
+            if (targetChar === tile.char) {
+                greens.add(tile.id);
+                const el = document.querySelector(`.tile[data-id="${tile.id}"]`);
+                if(el) el.classList.add('correct');
+            }
+        });
+
+        // 2. Identify Yellows (Present)
+        // Scoped to the "Word Segment" in the solution.
+        // Rule: Must be present in EITHER the Row Word OR the Column Word.
+
+        this.tiles.forEach(tile => {
+            if (tile.isAnimal || greens.has(tile.id)) return;
+
+            const inRow = this.checkSegment(tile, 'row', greens);
+            const inCol = this.checkSegment(tile, 'col', greens);
+
+            if (inRow || inCol) {
+                const el = document.querySelector(`.tile[data-id="${tile.id}"]`);
+                if(el) el.classList.add('present');
+            }
+        });
+    }
+
+    isAnimalChar(char) {
+        return ['🦊', '🦔'].includes(char);
+    }
+
+    checkSegment(tile, type, greens) {
+        // Find the boundaries of the segment in the SOLUTION grid
+        // A segment is broken by holes or animals in the solution.
+
+        let start, end, fixedCoord;
+        const grid = this.solutionGrid;
+
+        if (type === 'row') {
+            fixedCoord = tile.r;
+            // Scan left
+            let c = tile.c;
+            while (c >= 0 && !this.isHole(fixedCoord, c) && !this.isAnimalChar(grid[fixedCoord][c])) c--;
+            start = c + 1;
+
+            // Scan right
+            c = tile.c;
+            while (c < this.gridSize.cols && !this.isHole(fixedCoord, c) && !this.isAnimalChar(grid[fixedCoord][c])) c++;
+            end = c - 1;
+        } else {
+            fixedCoord = tile.c;
+            // Scan up
+            let r = tile.r;
+            while (r >= 0 && !this.isHole(r, fixedCoord) && !this.isAnimalChar(grid[r][fixedCoord])) r--;
+            start = r + 1;
+
+            // Scan down
+            r = tile.r;
+            while (r < this.gridSize.rows && !this.isHole(r, fixedCoord) && !this.isAnimalChar(grid[r][fixedCoord])) r++;
+            end = r - 1;
+        }
+
+        // If the tile is sitting on a hole/animal spot (shouldn't happen for letters usually, but safety check)
+        if (start > end) return false;
+
+        // Collect targets in this segment
+        const targets = [];
+        for (let i = start; i <= end; i++) {
+            const char = (type === 'row') ? grid[fixedCoord][i] : grid[i][fixedCoord];
+            targets.push(char);
+        }
+
+        // If letter not in targets, definitely not yellow
+        if (!targets.includes(tile.char)) return false;
+
+        // Advanced check: Handle duplicates?
+        // "If there are two 'A's in the word, and one is Green, the second 'A' elsewhere should be Yellow."
+        // "If there is one 'A' in the word, and it's already Green, the second 'A' elsewhere should be White."
+
+        // Count occurrences of tile.char in the solution segment
+        const totalInSegment = targets.filter(c => c === tile.char).length;
+
+        // Count how many of those are already matched by Green tiles in this segment
+        let greensInSegment = 0;
+        for (let i = start; i <= end; i++) {
+            const r = (type === 'row') ? fixedCoord : i;
+            const c = (type === 'row') ? i : fixedCoord;
+
+            // Find the tile at this position
+            const t = this.tiles.find(t => t.r === r && t.c === c);
+            if (t && t.char === tile.char && greens.has(t.id)) {
+                greensInSegment++;
+            }
+        }
+
+        // If we have satisfied all instances with greens, then this extra one is not yellow.
+        // BUT, we also need to account for other Yellows?
+        // Usually, we prioritize: Green > Yellow (left-to-right or top-to-bottom) > White.
+        // But for simple "Present" logic without strict ordering:
+        // If (Total Targets > Total Greens), then there is at least one "unclaimed" target.
+        // So this tile can be yellow.
+        // This is a simplification (it doesn't handle "3 tiles for 2 spots" perfectly where 2 should be yellow and 1 white),
+        // but it's much better than the global row check.
+
+        return totalInSegment > greensInSegment;
+    }
+
+    checkWin() {
+        const allGreen = this.tiles.every(t => {
+            if (t.isAnimal) return true;
+            const target = this.solutionGrid[t.r][t.c];
+            return target === t.char;
+        });
+
+        if (allGreen) {
+            // Check animals connected
+            const fox = this.tiles.find(t => t.id === 'fox');
+            const hedgehog = this.tiles.find(t => t.id === 'hedgehog');
+
+            const dr = Math.abs(fox.r - hedgehog.r);
+            const dc = Math.abs(fox.c - hedgehog.c);
+            const isConnected = (dr <= 1 && dc <= 1 && (dr + dc > 0)); // Adjacent including diagonals
+
+            if (isConnected) {
+                this.handleWin();
+            }
+        }
+    }
+
+    handleWin() {
+        // Save stats
+        const stats = this.getStats();
+        stats.solved++;
+        stats.totalMoves += this.moves;
+        stats.streak = (stats.streak || 0) + 1; // Increment streak
+        localStorage.setItem('reunion_stats', JSON.stringify(stats));
+
+        // Show results
+        this.showResults(true);
+    }
+
+    getStats() {
+        const stored = localStorage.getItem('reunion_stats');
+        return stored ? JSON.parse(stored) : { solved: 0, totalMoves: 0, streak: 0 };
+    }
+
+    showResults(isWin) {
+        const resultsSection = document.getElementById('results-section');
+        resultsSection.classList.remove('hidden');
+        const stats = this.getStats();
+
+        const starsEl = document.getElementById('result-stars');
+        const movesEl = document.getElementById('result-moves');
+
+        // Update stars
+        // If viewing stats (not win), show 0 or average? Or just hide?
+        // Screenshot implies this is a "Results" card, so it usually shows the LAST game's results.
+        // But if we just clicked "Results", we might not have a last game.
+        // For now, if !isWin, we can show empty stars or just keep previous state?
+
+        const stars = isWin ? this.calculateStars() : 0;
+        let starHtml = '';
+        for(let i=0; i<3; i++) {
+            if (i < stars) starHtml += '<span class="filled">★</span>';
+            else starHtml += '<span>★</span>';
+        }
+        starsEl.innerHTML = starHtml;
+
+        // Update Moves (YOU)
+        movesEl.textContent = isWin ? this.moves : '-';
+
+        // Update Stats
+        document.getElementById('stat-solved').textContent = stats.solved;
+        const avg = stats.solved > 0 ? (stats.totalMoves / stats.solved).toFixed(1) : "0.0";
+        document.getElementById('stat-avg-moves').textContent = avg;
+        document.getElementById('stat-streak').textContent = stats.streak || 0;
+
+        // Scroll to results
+        setTimeout(() => {
+            this.scrollToSection('results-section');
+            this.updateNav('nav-results');
+        }, 500);
+    }
+
+    hideResults() {
+        document.getElementById('results-section').classList.add('hidden');
+    }
+
+    scrollToSection(id) {
+        document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+    }
+
+    updateNav(activeId) {
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(activeId).classList.add('active');
+    }
+}
+
+// Start game
+window.addEventListener('DOMContentLoaded', () => {
+    new ReunionGame();
+});
