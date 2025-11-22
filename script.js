@@ -102,8 +102,9 @@ class ReunionGame {
         }
 
         if (!success) {
-            console.warn("Failed to generate advanced puzzle, falling back to hardcoded.");
-            this.useFallbackPuzzle();
+            console.error("Failed to generate advanced puzzle.");
+            alert("Failed to generate a valid puzzle. Please try again.");
+            return;
         }
 
         // Now that solutionGrid is set, create tiles
@@ -191,6 +192,7 @@ class ReunionGame {
         });
 
         this.moves = 0;
+        document.getElementById('nav-results').classList.add('disabled');
         this.updateUI();
         this.render();
     }
@@ -329,17 +331,7 @@ class ReunionGame {
 
 
 
-    useFallbackPuzzle() {
-        this.solutionGrid = [
-            ['🦊', 'L', 'A', 'M', 'B'],
-            ['🦔', null, 'M', null, 'A'],
-            ['S', 'T', 'O', 'R', 'Y'],
-            ['H', null, 'N', null, 'O'],
-            ['E', 'A', 'G', 'L', 'E'],
-            ['E', null, 'S', null, 'E'],
-            ['P', 'L', 'A', 'N', 'T']
-        ];
-    }
+
 
     removeSlot(slots, r, c) {
         const idx = slots.findIndex(s => s.r === r && s.c === c);
@@ -754,6 +746,7 @@ class ReunionGame {
             const isConnected = (dr <= 1 && dc <= 1 && (dr + dc > 0)); // Adjacent including diagonals
 
             if (isConnected) {
+                document.getElementById('nav-results').classList.remove('disabled');
                 this.handleWin();
             }
         }

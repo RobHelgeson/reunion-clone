@@ -265,6 +265,12 @@ h1 {
     letter-spacing: 1px;
 }
 
+.nav-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .nav-item.active {
     color: #374151; /* Dark gray */
 }
@@ -312,7 +318,7 @@ h1 {
 }
 
 .moves-label {
-    font-size: 0.8rem;
+    font-size: 2rem;
     font-weight: 800;
     color: #9ca3af;
     text-transform: uppercase;
