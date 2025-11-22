@@ -173,16 +173,17 @@ h1 {
 }
 
 .tile.animal {
-    background-color: #fca5a5; /* Light red/pink for animals initially */
-    font-size: 2rem;
+    background-color: transparent;
+    font-size: 3.5rem;
+    box-shadow: none; /* Remove shadow for cleaner look */
 }
 
 .tile.animal.fox {
-    background-color: #fdba74; /* Orange-ish */
+    background-color: transparent;
 }
 
 .tile.animal.hedgehog {
-    background-color: #a5b4fc; /* Indigo-ish */
+    background-color: transparent;
 }
 
 .modal-overlay {
@@ -242,38 +243,93 @@ h1 {
 /* Navigation */
 .game-nav {
     display: flex;
-    gap: 20px;
-    border-bottom: 2px solid rgba(0,0,0,0.1);
-    padding-bottom: 10px;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+    padding-bottom: 15px;
     width: 100%;
-    justify-content: center;
+    margin-top: 10px;
+}
+
+.nav-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
 }
 
 .nav-item {
     background: none;
     border: none;
     font-family: var(--font-family);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #9ca3af; /* Lighter gray */
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 5px 0;
     position: relative;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .nav-item.active {
-    color: var(--primary-color);
+    color: #374151; /* Dark gray */
 }
 
 .nav-item.active::after {
     content: '';
     position: absolute;
-    bottom: -12px;
+    bottom: -17px; /* Align with border-bottom of nav */
     left: 0;
     width: 100%;
     height: 3px;
-    background-color: var(--primary-color);
+    background-color: #374151;
     border-radius: 3px 3px 0 0;
+}
+
+.nav-icon-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.nav-icon-btn:hover {
+    color: #374151;
+}
+
+/* Moves Display */
+.game-info-centered {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 10px 0 20px;
+}
+
+.moves-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.moves-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.moves-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #374151;
+    line-height: 1;
 }
 
 /* Results Section */

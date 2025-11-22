@@ -36,7 +36,6 @@ class ReunionGame {
         this.setupBoard();
         await this.loadDictionary();
         await this.loadLevel();
-        this.render();
         this.setupEventListeners();
         document.getElementById('loading-overlay').classList.add('hidden');
     }
@@ -204,6 +203,7 @@ class ReunionGame {
 
         this.moves = 0;
         this.updateUI();
+        this.render();
     }
 
     async generateAdvancedPuzzle() {
@@ -502,9 +502,8 @@ class ReunionGame {
         });
 
         document.getElementById('reset-btn').addEventListener('click', () => {
-            if(confirm('Restart puzzle?')) {
+            if(confirm('Start a new puzzle?')) {
                 this.loadLevel();
-                this.render();
                 this.hideResults();
             }
         });
@@ -523,7 +522,6 @@ class ReunionGame {
 
         document.getElementById('next-puzzle-btn').addEventListener('click', () => {
             this.loadLevel();
-            this.render();
             this.hideResults();
             this.scrollToSection('puzzle-section');
             this.updateNav('nav-puzzle');
