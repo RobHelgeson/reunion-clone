@@ -376,9 +376,16 @@ class ReunionGame {
         // Check for complete words
         const checkWordComplete = (positions, wordId) => {
             const allCorrect = positions.every(([r, c]) => {
-                const tile = this.tiles.find(t => t.r === r && t.c === c && !t.isAnimal);
-                if (!tile) return true; // Skip animal positions
                 const solutionChar = this.solutionGrid[r][c];
+                const tile = this.tiles.find(t => t.r === r && t.c === c);
+
+                // If solution expects an animal at this position, check if the correct animal is there
+                if (solutionChar === '🦊' || solutionChar === '🦔') {
+                    return tile && tile.char === solutionChar;
+                }
+
+                // For letter positions: must have a non-animal tile with correct letter
+                if (!tile || tile.isAnimal) return false;
                 return tile.char === solutionChar;
             });
             if (allCorrect) {

@@ -19,7 +19,23 @@ class InputHandler {
             this.game.draggedTile = this.game.tiles.find(t => t.id === tileEl.dataset.id);
             if (!this.game.draggedTile) return;
 
-            // Delay adding the class so the browser captures the element style BEFORE it changes opacity/scale
+            // Create a custom drag image with rotation
+            const dragImage = tileEl.cloneNode(true);
+            dragImage.style.position = 'absolute';
+            dragImage.style.top = '-1000px';
+            dragImage.style.transform = 'rotate(-7deg) scale(.95)';
+            dragImage.style.boxShadow = '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)';
+            document.body.appendChild(dragImage);
+
+            // Set the custom drag image
+            e.dataTransfer.setDragImage(dragImage, tileEl.offsetWidth / 2, tileEl.offsetHeight / 2);
+
+            // Clean up the drag image after a brief delay
+            setTimeout(() => {
+                document.body.removeChild(dragImage);
+            }, 0);
+
+            // Fade out the original tile
             setTimeout(() => {
                 tileEl.classList.add('dragging');
             }, 0);
