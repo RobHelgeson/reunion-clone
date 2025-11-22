@@ -451,55 +451,147 @@ class ReunionGame {
             e.preventDefault();
             if (!this.draggedTile) return;
 
-            let targetR, targetC;
-
-            // Check if dropped on a tile
-            const targetTileEl = e.target.closest('.tile');
-            if (targetTileEl) {
-                const targetTile = this.tiles.find(t => t.id === targetTileEl.dataset.id);
-                if (targetTile) {
-                    targetR = targetTile.r;
-                    targetC = targetTile.c;
-                }
-            } else {
-                // Check if dropped on a slot
-                const slot = e.target.closest('.tile-slot');
-                if (slot && !slot.classList.contains('hole')) {
-                    targetR = parseInt(slot.dataset.r);
-                    targetC = parseInt(slot.dataset.c);
-                }
-            }
-
-            // If invalid target or same position, ignore
-            if (targetR === undefined || targetC === undefined) return;
-            if (this.draggedTile.r === targetR && this.draggedTile.c === targetC) return;
-
-            // Check if hole (double check, though slots handle this)
-            if (this.isHole(targetR, targetC)) return;
-
-            const occupant = this.tiles.find(t => t.r === targetR && t.c === targetC);
-
-            if (occupant) {
-                // Check if occupant is a correct letter (locked)
-                const occupantEl = document.querySelector(`.tile[data-id="${occupant.id}"]`);
-                if (occupantEl && occupantEl.classList.contains('correct')) {
-                    return;
-                }
-
-                // Swap
-                occupant.r = this.draggedTile.r;
-                occupant.c = this.draggedTile.c;
-            }
-
-            // Move dragged tile
-            this.draggedTile.r = targetR;
-            this.draggedTile.c = targetC;
-
-            this.moves++;
-            this.updateUI();
-            this.render();
-            this.checkWin();
+            const { r, c } = this.getTargetFromEvent(e);
+            this.attemptMove(this.draggedTile, r, c);
+            this.draggedTile = null;
         });
+
+        // Touch Events for Mobile
+        board.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) return; // Ignore multi-touch
+            const tileEl = e.target.closest('.tile');
+            if (!tileEl) return;
+
+            // Prevent dragging correct tiles
+            if (tileEl.classList.contains('correct')) return;
+
+            const tile = this.tiles.find(t => t.id === tileEl.dataset.id);
+            if (!tile) return;
+
+            this.draggedTile = tile;
+            tileEl.classList.add('dragging');
+
+            // Calculate offset to keep finger relative to tile position
+            const rect = tileEl.getBoundingClientRect();
+            const touch = e.touches[0];
+            this.dragOffset = {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+
+            // Remove transition for instant movement
+            tileEl.style.transition = 'none';
+        }, { passive: false });
+
+        board.addEventListener('touchmove', (e) => {
+            if (!this.draggedTile) return;
+            e.preventDefault(); // Prevent scrolling
+
+            const touch = e.touches[0];
+            const boardRect = board.getBoundingClientRect();
+            const tileEl = document.querySelector(`.tile[data-id="${this.draggedTile.id}"]`);
+
+            if (tileEl) {
+                const x = touch.clientX - boardRect.left - this.dragOffset.x;
+                const y = touch.clientY - boardRect.top - this.dragOffset.y;
+                tileEl.style.left = `${x}px`;
+                tileEl.style.top = `${y}px`;
+            }
+        }, { passive: false });
+
+        board.addEventListener('touchend', (e) => {
+            if (!this.draggedTile) return;
+
+            const tileEl = document.querySelector(`.tile[data-id="${this.draggedTile.id}"]`);
+
+            // Temporarily hide tile to find what's underneath
+            tileEl.style.display = 'none';
+            const touch = e.changedTouches[0];
+            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            tileEl.style.display = ''; // Restore
+
+            const { r, c } = this.getTargetFromElement(targetEl);
+            this.attemptMove(this.draggedTile, r, c);
+
+            this.draggedTile = null;
+            // Re-render will restore transitions and snap to grid
+            this.render();
+        });
+    }
+
+    getTargetFromEvent(e) {
+        let targetR, targetC;
+        // Check if dropped on a tile
+        const targetTileEl = e.target.closest('.tile');
+        if (targetTileEl) {
+            const targetTile = this.tiles.find(t => t.id === targetTileEl.dataset.id);
+            if (targetTile) {
+                targetR = targetTile.r;
+                targetC = targetTile.c;
+            }
+        } else {
+            // Check if dropped on a slot
+            const slot = e.target.closest('.tile-slot');
+            if (slot && !slot.classList.contains('hole')) {
+                targetR = parseInt(slot.dataset.r);
+                targetC = parseInt(slot.dataset.c);
+            }
+        }
+        return { r: targetR, c: targetC };
+    }
+
+    getTargetFromElement(el) {
+        if (!el) return { r: undefined, c: undefined };
+
+        let targetR, targetC;
+        const targetTileEl = el.closest('.tile');
+        if (targetTileEl) {
+            const targetTile = this.tiles.find(t => t.id === targetTileEl.dataset.id);
+            if (targetTile) {
+                targetR = targetTile.r;
+                targetC = targetTile.c;
+            }
+        } else {
+            const slot = el.closest('.tile-slot');
+            if (slot && !slot.classList.contains('hole')) {
+                targetR = parseInt(slot.dataset.r);
+                targetC = parseInt(slot.dataset.c);
+            }
+        }
+        return { r: targetR, c: targetC };
+    }
+
+    attemptMove(tile, targetR, targetC) {
+        // If invalid target or same position, ignore
+        if (targetR === undefined || targetC === undefined) return;
+        if (tile.r === targetR && tile.c === targetC) return;
+
+        // Check if hole
+        if (this.isHole(targetR, targetC)) return;
+
+        const occupant = this.tiles.find(t => t.r === targetR && t.c === targetC);
+
+        if (occupant) {
+            // Check if occupant is a correct letter (locked)
+            const occupantEl = document.querySelector(`.tile[data-id="${occupant.id}"]`);
+            if (occupantEl && occupantEl.classList.contains('correct')) {
+                return;
+            }
+
+            // Swap
+            occupant.r = tile.r;
+            occupant.c = tile.c;
+        }
+
+        // Move dragged tile
+        tile.r = targetR;
+        tile.c = targetC;
+
+        this.moves++;
+        this.updateUI();
+        this.render();
+        this.checkWin();
+    }
 
         document.getElementById('reset-btn').addEventListener('click', () => {
             if(confirm('Start a new puzzle?')) {
