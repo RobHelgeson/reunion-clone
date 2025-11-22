@@ -197,13 +197,14 @@ class ReunionGame {
     }
 
     updateTilePosition(el, r, c) {
-        const gap = 8;
-        const size = 60;
+        // Read CSS custom properties to handle responsive sizing
+        const styles = getComputedStyle(document.documentElement);
+        const size = parseInt(styles.getPropertyValue('--tile-size'));
+        const gap = parseInt(styles.getPropertyValue('--gap'));
         const x = c * (size + gap) + gap;
         const y = r * (size + gap) + gap;
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
-        el.style.transform = 'none'; // Clear any previous transform
     }
 
     setupUIEventListeners() {

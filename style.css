@@ -180,6 +180,10 @@ h1 {
     box-shadow: none; /* Remove shadow for cleaner look */
 }
 
+.tile.hedgehog {
+    transform: translateY(-4px);
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
