@@ -9,7 +9,7 @@ class PuzzleGenerator {
 
     async loadDictionary() {
         try {
-            const response = await fetch('https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-no-swears.txt');
+            const response = await fetch('https://raw.githubusercontent.com/redbo/scrabble/master/dictionary.txt');
             const text = await response.text();
             const words = text.split('\n').map(w => w.trim().toUpperCase()).filter(w => w.length >= 3 && w.length <= 7);
 
