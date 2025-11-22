@@ -20,6 +20,7 @@ class ReunionGame {
         this.inputHandler = new InputHandler(this);
         this.soundManager = new SoundManager();
         this.correctTiles = new Set(); // Track which tiles are currently correct
+        this.completedWords = new Set(); // Track which words are fully complete
 
         this.init();
     }
@@ -312,8 +313,17 @@ class ReunionGame {
         this.moves++;
         this.soundManager.playTileMove();
         this.updateUI();
-        this.render(); // Allow sounds during moves
-        this.checkWin();
+
+        // Check if this move wins the game
+        const isWinningMove = GameRules.checkWin(this.tiles, this.solutionGrid);
+
+        // Render without word complete sound if winning (win sound will play instead)
+        this.render(isWinningMove);
+
+        if (isWinningMove) {
+            document.getElementById('nav-results').classList.remove('disabled');
+            this.handleWin();
+        }
 
         // Save state after every move
         this.saveState();
@@ -326,9 +336,11 @@ class ReunionGame {
     updateColors(silent = false) {
         // Track which tiles were already correct BEFORE this update
         const previouslyCorrect = new Set(this.correctTiles);
+        const previouslyCompleteWords = new Set(this.completedWords);
 
-        // Clear the current set
+        // Clear the current sets
         this.correctTiles.clear();
+        this.completedWords.clear();
 
         // Reset classes
         document.querySelectorAll('.tile').forEach(el => {
@@ -361,18 +373,60 @@ class ReunionGame {
             }
         });
 
-        // Play sound if there are new correct letters (but not during silent renders)
-        if (hasNewGreens && !silent) {
-            this.soundManager.playCorrect();
+        // Check for complete words
+        const checkWordComplete = (positions, wordId) => {
+            const allCorrect = positions.every(([r, c]) => {
+                const tile = this.tiles.find(t => t.r === r && t.c === c && !t.isAnimal);
+                if (!tile) return true; // Skip animal positions
+                const solutionChar = this.solutionGrid[r][c];
+                return tile.char === solutionChar;
+            });
+            if (allCorrect) {
+                this.completedWords.add(wordId);
+            }
+        };
+
+        // Check horizontal words (rows 0, 2, 4, 6)
+        const wordRows = [0, 2, 4, 6];
+        wordRows.forEach(r => {
+            const positions = [];
+            for (let c = 0; c < this.gridSize.cols; c++) {
+                positions.push([r, c]);
+            }
+            checkWordComplete(positions, `row-${r}`);
+        });
+
+        // Check vertical words (columns 0, 2, 4)
+        const wordCols = [0, 2, 4];
+        wordCols.forEach(c => {
+            const positions = [];
+            for (let r = 0; r < this.gridSize.rows; r++) {
+                positions.push([r, c]);
+            }
+            checkWordComplete(positions, `col-${c}`);
+        });
+
+        // Play sounds (but not during silent renders)
+        if (!silent) {
+            // Check if any new words were completed
+            let hasNewCompleteWords = false;
+            this.completedWords.forEach(wordId => {
+                if (!previouslyCompleteWords.has(wordId)) {
+                    hasNewCompleteWords = true;
+                }
+            });
+
+            if (hasNewCompleteWords) {
+                // Play word complete sound (takes priority over individual letter sound)
+                this.soundManager.playWordComplete();
+            } else if (hasNewGreens) {
+                // Play sound for new correct letters
+                this.soundManager.playCorrect();
+            }
         }
     }
 
-    checkWin() {
-        if (GameRules.checkWin(this.tiles, this.solutionGrid)) {
-            document.getElementById('nav-results').classList.remove('disabled');
-            this.handleWin();
-        }
-    }
+
 
     handleWin() {
         // Play win sound
@@ -466,7 +520,9 @@ class ReunionGame {
             this.render(true); // Silent when loading saved state
 
             // Check if puzzle was already solved
-            this.checkWin();
+            if (GameRules.checkWin(this.tiles, this.solutionGrid)) {
+                document.getElementById('nav-results').classList.remove('disabled');
+            }
 
             return true;
         } catch (e) {
