@@ -623,7 +623,6 @@ h1 {
     line-height: 1.4;
 }
 
-/* Toggle Switch */
 .toggle-switch {
     position: relative;
     display: inline-block;
@@ -671,7 +670,6 @@ input:checked + .toggle-slider:before {
     transform: translateX(24px);
 }
 
-/* Reset Stats Button */
 .reset-stats-btn {
     padding: 8px 20px;
     background-color: #ef4444;
