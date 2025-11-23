@@ -22,6 +22,7 @@ class ReunionGame {
         this.correctTiles = new Set(); // Track which tiles are currently correct
         this.completedWords = new Set(); // Track which words are fully complete
 
+        this.applyTheme();
         this.init();
     }
 
@@ -231,6 +232,7 @@ class ReunionGame {
         });
 
         document.getElementById('help-btn').addEventListener('click', () => {
+            this.updateHelpContent();
             document.getElementById('modal-overlay').classList.remove('hidden');
         });
 
@@ -241,8 +243,9 @@ class ReunionGame {
         // Settings
         document.getElementById('settings-btn').addEventListener('click', () => {
             document.getElementById('settings-overlay').classList.remove('hidden');
-            // Update toggle state
+            // Update toggle states
             document.getElementById('sound-toggle').checked = this.soundManager.isEnabled();
+            document.getElementById('dark-mode-toggle').checked = this.isDarkMode();
         });
 
         document.getElementById('settings-close').addEventListener('click', () => {
@@ -255,6 +258,10 @@ class ReunionGame {
             if (e.target.checked) {
                 this.soundManager.playTileMove();
             }
+        });
+
+        document.getElementById('dark-mode-toggle').addEventListener('change', () => {
+            this.toggleDarkMode();
         });
 
         // Navigation
@@ -491,6 +498,26 @@ class ReunionGame {
         document.getElementById(activeId).classList.add('active');
     }
 
+    updateHelpContent() {
+        const isDark = this.isDarkMode();
+        const correctColor = isDark ? 'Blue' : 'Green';
+        const correctEmoji = isDark ? '🟦' : '🟩';
+        const presentColor = isDark ? 'Red' : 'Yellow';
+        const presentEmoji = isDark ? '🟥' : '🟨';
+
+        const helpContent = `
+            <p>🦊 <strong>Reunite the Fox &amp; Hedgehog!</strong> 🦔</p>
+            <ul class="modal-list">
+                <li class="modal-list-item">1. Drag letters to form valid words in every row and column.</li>
+                <li class="modal-list-item">2. ${correctEmoji} <strong>${correctColor}</strong>: Correct letter in the correct spot.</li>
+                <li class="modal-list-item">3. ${presentEmoji} <strong>${presentColor}</strong>: Correct letter for that row OR column, but wrong spot.</li>
+                <li class="modal-list-item">4. Animals and holes break up words.</li>
+                <li class="modal-list-item">5. Find all words and connect the animals (adjacent or diagonal) to win!</li>
+            </ul>
+        `;
+        document.getElementById('modal-content').innerHTML = helpContent;
+    }
+
     saveState() {
         const state = {
             solutionGrid: this.solutionGrid,
@@ -540,6 +567,29 @@ class ReunionGame {
 
     clearState() {
         localStorage.removeItem('reunion_current_puzzle');
+    }
+
+    isDarkMode() {
+        const saved = localStorage.getItem('reunion_dark_mode');
+        return saved === 'true';
+    }
+
+    toggleDarkMode() {
+        const isDark = this.isDarkMode();
+        const newValue = !isDark;
+        document.body.classList.toggle('dark-mode', newValue);
+        localStorage.setItem('reunion_dark_mode', newValue.toString());
+
+        // Update help content if modal is open
+        const modalOverlay = document.getElementById('modal-overlay');
+        if (!modalOverlay.classList.contains('hidden')) {
+            this.updateHelpContent();
+        }
+    }
+
+    applyTheme() {
+        const isDark = this.isDarkMode();
+        document.body.classList.toggle('dark-mode', isDark);
     }
 }
 

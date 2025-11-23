@@ -13,6 +13,52 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --font-family: 'Outfit', sans-serif;
+    --modal-bg: #ffffff;
+    --modal-text: #4b5563;
+    --nav-inactive: #9ca3af;
+    --nav-active: #374151;
+    --icon-btn-bg: #ffffff;
+    --moves-value-color: #374151;
+    --results-bg: #fdfbf7;
+    --results-heading: #374151;
+    --comp-label-color: #5f6b36;
+    --stat-val-color: #374151;
+    --stat-sub-color: #6b7280;
+    --share-btn-bg: #fcd34d;
+    --share-btn-text: #1f2937;
+    --play-btn-bg: #84cc16;
+    --play-btn-text: #1f2937;
+    --toggle-bg: #cbd5e1;
+}
+
+body.dark-mode {
+    --bg-color: #1a1625;
+    --board-bg: #2d2640;
+    --text-color: #e5e7eb;
+    --primary-color: #8b5cf6; /* Purple */
+    --success-color: #3b82f6; /* Blue */
+    --warning-color: #ef4444; /* Red */
+    --neutral-color: #3f3854;
+    --hole-color: #4a4458;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+    --modal-bg: #2d2640;
+    --modal-text: #d1d5db;
+    --nav-inactive: #6b7280;
+    --nav-active: #e5e7eb;
+    --icon-btn-bg: #3f3854;
+    --moves-value-color: #e5e7eb;
+    --results-bg: #2d2640;
+    --results-heading: #e5e7eb;
+    --comp-label-color: #a78bfa;
+    --stat-val-color: #e5e7eb;
+    --stat-sub-color: #9ca3af;
+    --share-btn-bg: #8b5cf6;
+    --share-btn-text: #ffffff;
+    --play-btn-bg: #3b82f6;
+    --play-btn-text: #ffffff;
+    --toggle-bg: #4a4458;
 }
 
 * {
@@ -25,15 +71,31 @@
 body {
     font-family: var(--font-family);
     background-color: var(--bg-color);
-    background-image: url('forest_background_1763838777701.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
     color: var(--text-color);
     display: flex;
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('forest_background_1763838777701.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    transition: filter 0.3s ease;
+}
+
+body.dark-mode::before {
+    filter: brightness(0.5) saturate(0.9) hue-rotate(130deg);
 }
 
 .app-container {
@@ -66,7 +128,7 @@ h1 {
 }
 
 .icon-btn {
-    background: white;
+    background: var(--icon-btn-bg);
     border: none;
     border-radius: 50%;
     width: 40px;
@@ -104,7 +166,7 @@ h1 {
 }
 
 .game-board-container {
-    background: white;
+    background: var(--modal-bg);
     padding: 20px;
     border-radius: 16px;
     box-shadow: var(--shadow-lg);
@@ -202,7 +264,7 @@ h1 {
 }
 
 .modal {
-    background: white;
+    background: var(--modal-bg);
     padding: 30px;
     border-radius: 16px;
     max-width: 90%;
@@ -219,7 +281,7 @@ h1 {
 .modal p {
     margin-bottom: 15px;
     line-height: 1.5;
-    color: #4b5563;
+    color: var(--modal-text);
 }
 
 #modal-close {
@@ -260,7 +322,7 @@ h1 {
     font-family: var(--font-family);
     font-size: 0.9rem;
     font-weight: 800;
-    color: #9ca3af; /* Lighter gray */
+    color: var(--nav-inactive);
     cursor: pointer;
     padding: 5px 0;
     position: relative;
@@ -275,7 +337,7 @@ h1 {
 }
 
 .nav-item.active {
-    color: #374151; /* Dark gray */
+    color: var(--nav-active);
 }
 
 .nav-item.active::after {
@@ -285,14 +347,14 @@ h1 {
     left: 0;
     width: 100%;
     height: 3px;
-    background-color: #374151;
+    background-color: var(--nav-active);
     border-radius: 3px 3px 0 0;
 }
 
 .nav-icon-btn {
     background: none;
     border: none;
-    color: #9ca3af;
+    color: var(--nav-inactive);
     cursor: pointer;
     padding: 5px;
     display: flex;
@@ -302,7 +364,7 @@ h1 {
 }
 
 .nav-icon-btn:hover {
-    color: #374151;
+    color: var(--nav-active);
 }
 
 /* Moves Display */
@@ -323,7 +385,7 @@ h1 {
 .moves-label {
     font-size: 2rem;
     font-weight: 800;
-    color: #9ca3af;
+    color: var(--nav-inactive);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -331,13 +393,13 @@ h1 {
 .moves-value {
     font-size: 2rem;
     font-weight: 800;
-    color: #374151;
+    color: var(--moves-value-color);
     line-height: 1;
 }
 
 /* Results Section */
 .results-section {
-    background: #fdfbf7; /* Beige background */
+    background: var(--results-bg);
     padding: 30px 20px;
     border-radius: 16px;
     box-shadow: var(--shadow-lg);
@@ -345,7 +407,7 @@ h1 {
     max-width: 500px;
     text-align: center;
     margin-top: 20px;
-    color: #4b5563;
+    color: var(--modal-text);
 }
 
 .results-section.hidden {
@@ -355,7 +417,7 @@ h1 {
 .results-section h2 {
     font-family: 'serif'; /* Or a specific font if available */
     font-size: 2rem;
-    color: #374151;
+    color: var(--results-heading);
     margin-bottom: 10px;
     letter-spacing: 1px;
 }
@@ -394,7 +456,7 @@ h1 {
 .comp-label {
     font-weight: 800;
     font-size: 1.1rem;
-    color: #5f6b36; /* Olive green tone */
+    color: var(--comp-label-color);
 }
 
 .comparison-item {
@@ -404,14 +466,14 @@ h1 {
 .comp-value {
     font-size: 2rem;
     font-weight: 800;
-    color: #374151;
+    color: var(--stat-val-color);
     line-height: 1;
 }
 
 .comp-sub {
     font-size: 0.7rem;
     font-weight: 700;
-    color: #6b7280;
+    color: var(--stat-sub-color);
     margin-top: 5px;
     text-transform: uppercase;
 }
@@ -427,7 +489,7 @@ h1 {
 .stat-label-main {
     font-weight: 800;
     font-size: 1.1rem;
-    color: #5f6b36;
+    color: var(--comp-label-color);
 }
 
 .stat-group {
@@ -442,13 +504,13 @@ h1 {
 .stat-val {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #374151;
+    color: var(--stat-val-color);
 }
 
 .stat-sub {
     font-size: 0.65rem;
     font-weight: 700;
-    color: #6b7280;
+    color: var(--stat-sub-color);
     text-transform: uppercase;
 }
 
@@ -479,13 +541,13 @@ h1 {
 }
 
 .share-btn {
-    background: #fcd34d;
-    color: #1f2937;
+    background: var(--share-btn-bg);
+    color: var(--share-btn-text);
 }
 
 .play-btn {
-    background: #84cc16;
-    color: #1f2937;
+    background: var(--play-btn-bg);
+    color: var(--play-btn-text);
 }
 
 @keyframes spin {
@@ -583,7 +645,7 @@ h1 {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #cbd5e1;
+    background-color: var(--toggle-bg);
     transition: 0.3s;
     border-radius: 28px;
 }
