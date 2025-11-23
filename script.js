@@ -264,6 +264,12 @@ class ReunionGame {
             this.toggleDarkMode();
         });
 
+        document.getElementById('reset-stats-btn').addEventListener('click', () => {
+            if (confirm('⚠️ This will clear all your stats and start a new puzzle. Are you sure?')) {
+                this.resetStats();
+            }
+        });
+
         // Navigation
         document.getElementById('nav-puzzle').addEventListener('click', () => {
             this.scrollToSection('puzzle-section');
@@ -567,6 +573,25 @@ class ReunionGame {
 
     clearState() {
         localStorage.removeItem('reunion_current_puzzle');
+    }
+
+    resetStats() {
+        // Clear stats and current puzzle
+        localStorage.removeItem('reunion_stats');
+        localStorage.removeItem('reunion_current_puzzle');
+
+        // Close settings modal
+        document.getElementById('settings-overlay').classList.add('hidden');
+
+        // Hide results if shown
+        this.hideResults();
+
+        // Start a new game
+        this.loadLevel();
+
+        // Navigate to puzzle view
+        this.scrollToSection('puzzle-section');
+        this.updateNav('nav-puzzle');
     }
 
     isDarkMode() {

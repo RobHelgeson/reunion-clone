@@ -45,14 +45,14 @@ body.dark-mode {
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
     --modal-bg: #2d2640;
     --modal-text: #d1d5db;
-    --nav-inactive: #6b7280;
-    --nav-active: #e5e7eb;
+    --nav-inactive: #d1d5db;
+    --nav-active: #f3f4f6;
     --icon-btn-bg: #3f3854;
-    --moves-value-color: #e5e7eb;
+    --moves-value-color: #f3f4f6;
     --results-bg: #2d2640;
-    --results-heading: #e5e7eb;
+    --results-heading: #f3f4f6;
     --comp-label-color: #a78bfa;
-    --stat-val-color: #e5e7eb;
+    --stat-val-color: #f3f4f6;
     --stat-sub-color: #9ca3af;
     --share-btn-bg: #8b5cf6;
     --share-btn-text: #ffffff;
@@ -669,6 +669,28 @@ input:checked + .toggle-slider {
 
 input:checked + .toggle-slider:before {
     transform: translateX(24px);
+}
+
+/* Reset Stats Button */
+.reset-stats-btn {
+    padding: 8px 20px;
+    background-color: #ef4444;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.reset-stats-btn:hover {
+    background-color: #dc2626;
+}
+
+.reset-stats-btn:active {
+    transform: scale(0.98);
 }
 
 #settings-close {
