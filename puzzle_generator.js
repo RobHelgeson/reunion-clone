@@ -72,18 +72,32 @@ class PuzzleGenerator {
         ];
         const config = animalConfigs[Math.floor(Math.random() * animalConfigs.length)];
 
-        grid[config[0].r][config[0].c] = '🦊';
-        grid[config[1].r][config[1].c] = '🦔';
+        // Try multiple times with the same config before giving up
+        // This ensures diagonal configs (which may have tighter constraints) get fair chances
+        for (let attempt = 0; attempt < 5; attempt++) {
+            // Reset grid for each attempt
+            for (let r = 0; r < 7; r++) {
+                for (let c = 0; c < 5; c++) {
+                    grid[r][c] = null;
+                }
+            }
 
-        // 2. Identify Slots
-        const slots = this.identifySlots(grid);
+            grid[config[0].r][config[0].c] = '🦊';
+            grid[config[1].r][config[1].c] = '🦔';
 
-        // 3. Solve
-        // Sort slots by length (longer first)
-        slots.sort((a, b) => b.len - a.len);
+            // 2. Identify Slots
+            const slots = this.identifySlots(grid);
 
-        const success = this.solveGrid(grid, slots, 0);
-        return success ? grid : null;
+            // 3. Solve
+            // Sort slots by length (longer first)
+            slots.sort((a, b) => b.len - a.len);
+
+            if (this.solveGrid(grid, slots, 0)) {
+                return grid;
+            }
+        }
+
+        return null;
     }
 
     identifySlots(grid) {
