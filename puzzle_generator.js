@@ -9,7 +9,8 @@ class PuzzleGenerator {
 
     async loadDictionary() {
         try {
-            const response = await fetch('https://raw.githubusercontent.com/redbo/scrabble/master/dictionary.txt');
+            // Using ENABLE word list (~52k words of 3-7 letters, curated for word games)
+            const response = await fetch('https://raw.githubusercontent.com/dolph/dictionary/master/enable1.txt');
             const text = await response.text();
             const words = text.split('\n').map(w => w.trim().toUpperCase()).filter(w => w.length >= 3 && w.length <= 7);
 
