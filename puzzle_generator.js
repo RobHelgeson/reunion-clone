@@ -33,9 +33,10 @@ class PuzzleGenerator {
 
         // 1. Pick Animal Positions
         // Valid configurations where:
-        // - Animals are adjacent (horizontally or vertically)
+        // - Animals are adjacent (horizontally, vertically, or diagonally)
         // - No animal on hole positions: (1,1), (1,3), (3,1), (3,3), (5,1), (5,3)
         // - All resulting word segments are >= 3 letters
+        // - No cell is orphaned (isolated in both row AND column)
         const animalConfigs = [
             // Corner configurations - vertical (row 0/6 keeps 4 letters, column keeps 5 letters)
             [{r:0, c:0}, {r:1, c:0}],  // top-left, vertical
@@ -48,6 +49,26 @@ class PuzzleGenerator {
             [{r:0, c:3}, {r:0, c:4}],  // top-right horizontal
             [{r:6, c:0}, {r:6, c:1}],  // bottom-left horizontal
             [{r:6, c:3}, {r:6, c:4}],  // bottom-right horizontal
+
+            // Left edge diagonals (cell at c=0 isolated in row but in column 0 word)
+            [{r:1, c:0}, {r:2, c:1}],  // rows 1-2
+            [{r:3, c:0}, {r:2, c:1}],  // rows 2-3
+            [{r:3, c:0}, {r:4, c:1}],  // rows 3-4
+            [{r:5, c:0}, {r:4, c:1}],  // rows 4-5
+
+            // Right edge diagonals (cell at c=4 isolated in row but in column 4 word)
+            [{r:1, c:4}, {r:2, c:3}],  // rows 1-2
+            [{r:3, c:4}, {r:2, c:3}],  // rows 2-3
+            [{r:3, c:4}, {r:4, c:3}],  // rows 3-4
+            [{r:5, c:4}, {r:4, c:3}],  // rows 4-5
+
+            // Top edge diagonals (cell at r=0 isolated in column but in row 0 word)
+            [{r:0, c:1}, {r:1, c:2}],  // cols 1-2
+            [{r:0, c:3}, {r:1, c:2}],  // cols 2-3
+
+            // Bottom edge diagonals (cell at r=6 isolated in column but in row 6 word)
+            [{r:6, c:1}, {r:5, c:2}],  // cols 1-2
+            [{r:6, c:3}, {r:5, c:2}],  // cols 2-3
         ];
         const config = animalConfigs[Math.floor(Math.random() * animalConfigs.length)];
 
