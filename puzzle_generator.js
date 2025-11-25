@@ -32,50 +32,22 @@ class PuzzleGenerator {
         const grid = Array(7).fill(null).map(() => Array(5).fill(null));
 
         // 1. Pick Animal Positions
-        // Many valid configurations where animals are adjacent (including diagonal)
-        // Holes are at: (1,1), (1,3), (3,1), (3,3), (5,1), (5,3)
+        // Valid configurations where:
+        // - Animals are adjacent (horizontally or vertically)
+        // - No animal on hole positions: (1,1), (1,3), (3,1), (3,3), (5,1), (5,3)
+        // - All resulting word segments are >= 3 letters
         const animalConfigs = [
-            // Corner configurations - vertical (original 4)
+            // Corner configurations - vertical (row 0/6 keeps 4 letters, column keeps 5 letters)
             [{r:0, c:0}, {r:1, c:0}],  // top-left, vertical
             [{r:5, c:0}, {r:6, c:0}],  // bottom-left, vertical
             [{r:0, c:4}, {r:1, c:4}],  // top-right, vertical
             [{r:5, c:4}, {r:6, c:4}],  // bottom-right, vertical
 
-            // Middle column vertical (column 2)
-            [{r:0, c:2}, {r:1, c:2}],  // top-middle, vertical
-            [{r:5, c:2}, {r:6, c:2}],  // bottom-middle, vertical
-
-            // Horizontal pairs on row 0 (top edge)
+            // Corner configurations - horizontal (row keeps 3 letters, column keeps 6 letters)
             [{r:0, c:0}, {r:0, c:1}],  // top-left horizontal
             [{r:0, c:3}, {r:0, c:4}],  // top-right horizontal
-
-            // Horizontal pairs on row 6 (bottom edge)
             [{r:6, c:0}, {r:6, c:1}],  // bottom-left horizontal
             [{r:6, c:3}, {r:6, c:4}],  // bottom-right horizontal
-
-            // Diagonal pairs at corners
-            [{r:0, c:0}, {r:1, c:1}],  // top-left diagonal (note: 1,1 is hole but animal can go there)
-            [{r:0, c:4}, {r:1, c:3}],  // top-right diagonal (note: 1,3 is hole but animal can go there)
-            [{r:6, c:0}, {r:5, c:1}],  // bottom-left diagonal (note: 5,1 is hole but animal can go there)
-            [{r:6, c:4}, {r:5, c:3}],  // bottom-right diagonal (note: 5,3 is hole but animal can go there)
-
-            // Mid-edge configurations
-            [{r:0, c:1}, {r:0, c:2}],  // top edge middle-left
-            [{r:0, c:2}, {r:0, c:3}],  // top edge middle-right
-            [{r:6, c:1}, {r:6, c:2}],  // bottom edge middle-left
-            [{r:6, c:2}, {r:6, c:3}],  // bottom edge middle-right
-
-            // Side edge vertical pairs
-            [{r:2, c:0}, {r:3, c:0}],  // left edge middle-top
-            [{r:3, c:0}, {r:4, c:0}],  // left edge middle-bottom
-            [{r:2, c:4}, {r:3, c:4}],  // right edge middle-top
-            [{r:3, c:4}, {r:4, c:4}],  // right edge middle-bottom
-
-            // Additional corner diagonals (into word rows)
-            [{r:1, c:0}, {r:2, c:0}],  // left edge top
-            [{r:4, c:0}, {r:5, c:0}],  // left edge bottom
-            [{r:1, c:4}, {r:2, c:4}],  // right edge top
-            [{r:4, c:4}, {r:5, c:4}],  // right edge bottom
         ];
         const config = animalConfigs[Math.floor(Math.random() * animalConfigs.length)];
 
