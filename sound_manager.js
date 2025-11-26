@@ -6,16 +6,30 @@ class SoundManager {
     constructor() {
         this.audioContext = null;
         this.enabled = this.loadPreference();
-        this.initAudioContext();
+        // Don't create AudioContext here - browsers suspend it when created without user interaction
+        // Instead, create it lazily on first sound play (which happens on user interaction)
     }
 
-    initAudioContext() {
-        try {
-            // Create audio context on user interaction (browser autoplay policy)
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
-            console.warn('Web Audio API not supported', e);
+    /**
+     * Lazily create and resume the AudioContext on first use
+     * Must be called from a user interaction handler to work properly
+     */
+    ensureAudioContext() {
+        if (!this.audioContext) {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn('Web Audio API not supported', e);
+                return false;
+            }
         }
+
+        // Resume if suspended (this works because we're called from user interaction)
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
+        return this.audioContext.state !== 'closed';
     }
 
     loadPreference() {
@@ -41,14 +55,10 @@ class SoundManager {
      * Play a tone with specified parameters
      */
     playTone(frequency, duration, volume = 0.3, type = 'sine') {
-        if (!this.enabled || !this.audioContext) return;
+        if (!this.enabled) return;
+        if (!this.ensureAudioContext()) return;
 
         try {
-            // Resume audio context if suspended (browser autoplay policy)
-            if (this.audioContext.state === 'suspended') {
-                this.audioContext.resume();
-            }
-
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
 
@@ -75,7 +85,8 @@ class SoundManager {
      * Play multiple tones in sequence
      */
     playSequence(notes, baseVolume = 0.3) {
-        if (!this.enabled || !this.audioContext) return;
+        if (!this.enabled) return;
+        if (!this.ensureAudioContext()) return;
 
         let time = this.audioContext.currentTime;
 
