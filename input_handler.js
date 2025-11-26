@@ -10,6 +10,9 @@ class InputHandler {
             const tileEl = e.target.closest('.tile');
             if (!tileEl) return;
 
+            // Warm up audio context on first interaction so sounds are ready on drop
+            this.game.soundManager.warmUp();
+
             // Prevent dragging correct tiles
             if (tileEl.classList.contains('correct')) {
                 e.preventDefault();
@@ -70,6 +73,9 @@ class InputHandler {
 
             const tileEl = e.target.closest('.tile');
             if (!tileEl) return;
+
+            // Warm up audio context on first interaction so sounds are ready on touchend
+            this.game.soundManager.warmUp();
 
             // Prevent dragging correct tiles
             if (tileEl.classList.contains('correct')) return;

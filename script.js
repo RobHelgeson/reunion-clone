@@ -253,10 +253,15 @@ class ReunionGame {
         });
 
         document.getElementById('sound-toggle').addEventListener('change', (e) => {
+            // Warm up audio context before toggling (in case this is the first sound)
+            if (e.target.checked) {
+                this.soundManager.warmUp();
+            }
             this.soundManager.toggle();
             // Play a test sound when enabling
             if (e.target.checked) {
-                this.soundManager.playTileMove();
+                // Small delay to ensure audio context is ready
+                setTimeout(() => this.soundManager.playTileMove(), 50);
             }
         });
 
