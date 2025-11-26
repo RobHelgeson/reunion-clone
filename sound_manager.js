@@ -32,6 +32,29 @@ class SoundManager {
         return this.audioContext.state !== 'closed';
     }
 
+    /**
+     * Warm up the audio context on user interaction (before sounds are needed)
+     * Call this on dragstart/touchstart to ensure audio is ready by the time
+     * we need to play sounds (on drop/touchend)
+     */
+    warmUp() {
+        if (!this.enabled) return;
+
+        if (!this.audioContext) {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn('Web Audio API not supported', e);
+                return;
+            }
+        }
+
+        // Resume the context - by the time we need to play sounds, it should be ready
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+    }
+
     loadPreference() {
         const saved = localStorage.getItem('soundEnabled');
         return saved === null ? true : saved === 'true';
