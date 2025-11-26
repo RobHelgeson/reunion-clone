@@ -8,6 +8,28 @@ class SoundManager {
         this.enabled = this.loadPreference();
         // Don't create AudioContext here - browsers suspend it when created without user interaction
         // Instead, create it lazily on first sound play (which happens on user interaction)
+
+        // Set up early warm-up on first user interaction with the page
+        // This ensures AudioContext is ready before any game sounds need to play
+        this.setupEarlyWarmUp();
+    }
+
+    /**
+     * Set up listeners to warm up AudioContext on first user interaction
+     * This catches interactions that happen before dragging (e.g., clicking the page)
+     */
+    setupEarlyWarmUp() {
+        const warmUpOnce = () => {
+            this.warmUp();
+            // Remove listeners after first use - only need to warm up once
+            document.removeEventListener('click', warmUpOnce);
+            document.removeEventListener('touchstart', warmUpOnce);
+            document.removeEventListener('mousedown', warmUpOnce);
+        };
+
+        document.addEventListener('click', warmUpOnce);
+        document.addEventListener('touchstart', warmUpOnce);
+        document.addEventListener('mousedown', warmUpOnce);
     }
 
     /**
@@ -51,7 +73,33 @@ class SoundManager {
 
         // Resume the context - by the time we need to play sounds, it should be ready
         if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+            this.audioContext.resume().then(() => {
+                // Play a silent pulse to fully activate the audio pipeline
+                this.playSilentPulse();
+            });
+        } else if (this.audioContext.state === 'running') {
+            // Context is running but may need a pulse to stay active
+            this.playSilentPulse();
+        }
+    }
+
+    /**
+     * Play a silent sound to fully activate the audio context
+     * This ensures the audio pipeline is primed and ready for real sounds
+     */
+    playSilentPulse() {
+        if (!this.audioContext || this.audioContext.state !== 'running') return;
+
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            gainNode.gain.value = 0; // Silent
+            oscillator.start();
+            oscillator.stop(this.audioContext.currentTime + 0.001);
+        } catch (e) {
+            // Ignore errors - this is just a warm-up pulse
         }
     }
 
