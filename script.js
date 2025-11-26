@@ -141,7 +141,7 @@ class ReunionGame {
             this.removeSlot(availableSlots, hedgehog.r, hedgehog.c);
         }
 
-        // Select 5 random letters to be correct at start
+        // Select 7 random letters to be correct at start
         const letters = this.tiles.filter(t => !t.isAnimal);
 
         // Filter letters whose target positions are NOT occupied by animals
@@ -153,7 +153,7 @@ class ReunionGame {
 
         // Shuffle candidates to pick random ones
         this.puzzleGenerator.shuffle(validCandidates);
-        const fixedLetters = validCandidates.slice(0, 5);
+        const fixedLetters = validCandidates.slice(0, 7);
         const fixedIds = new Set(fixedLetters.map(t => t.id));
 
         // Place fixed letters
