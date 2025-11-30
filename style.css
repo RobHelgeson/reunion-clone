@@ -194,7 +194,18 @@ h1 {
     background-color: var(--board-bg);
 }
 
-/* Holes keep board background - the hole effect comes from transparent tile-slot inside */
+/* Punch through cell-wrapper background for holes to see the background image */
+/* Uses CSS mask to cut out only the content-box (tile-slot area), leaving the padding frame visible */
+.cell-wrapper:has(.hole) {
+    -webkit-mask:
+        linear-gradient(#fff 0 0),
+        linear-gradient(#fff 0 0) content-box;
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#fff 0 0),
+        linear-gradient(#fff 0 0) content-box;
+    mask-composite: exclude;
+}
 
 /* Outer corner rounding for the 4 corners of the board */
 .cell-wrapper.corner-tl {
