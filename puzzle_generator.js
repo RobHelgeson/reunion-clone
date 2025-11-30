@@ -69,6 +69,16 @@ class PuzzleGenerator {
             // Bottom edge diagonals (cell at r=6 isolated in column but in row 6 word)
             [{r:6, c:1}, {r:5, c:2}],  // cols 1-2
             [{r:6, c:3}, {r:5, c:2}],  // cols 2-3
+
+            // Internal diagonals (positions at rows 2,4 and cols 1,3 paired with col 2)
+            [{r:2, c:1}, {r:1, c:2}],
+            [{r:2, c:1}, {r:3, c:2}],
+            [{r:2, c:3}, {r:1, c:2}],
+            [{r:2, c:3}, {r:3, c:2}],
+            [{r:4, c:1}, {r:3, c:2}],
+            [{r:4, c:1}, {r:5, c:2}],
+            [{r:4, c:3}, {r:3, c:2}],
+            [{r:4, c:3}, {r:5, c:2}],
         ];
         const config = animalConfigs[Math.floor(Math.random() * animalConfigs.length)];
 
