@@ -43,23 +43,29 @@ class ReunionGame {
 
     setupBoard() {
         const board = document.getElementById('game-board');
-        board.style.gridTemplateColumns = `repeat(${this.gridSize.cols}, var(--tile-size))`;
-        board.style.gridTemplateRows = `repeat(${this.gridSize.rows}, var(--tile-size))`;
+        board.style.gridTemplateColumns = `repeat(${this.gridSize.cols}, calc(var(--tile-size) + var(--gap)))`;
+        board.style.gridTemplateRows = `repeat(${this.gridSize.rows}, calc(var(--tile-size) + var(--gap)))`;
 
         board.innerHTML = '';
 
         for (let r = 0; r < this.gridSize.rows; r++) {
             for (let c = 0; c < this.gridSize.cols; c++) {
+                // Create wrapper div for each cell (provides background)
+                const wrapper = document.createElement('div');
+                wrapper.className = 'cell-wrapper';
+
                 const slot = document.createElement('div');
                 slot.className = 'tile-slot';
                 slot.dataset.r = r;
                 slot.dataset.c = c;
 
                 if (this.isHole(r, c)) {
+                    wrapper.classList.add('hole');
                     slot.classList.add('hole');
                 }
 
-                board.appendChild(slot);
+                wrapper.appendChild(slot);
+                board.appendChild(wrapper);
             }
         }
     }

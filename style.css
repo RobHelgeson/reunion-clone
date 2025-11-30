@@ -175,14 +175,27 @@ h1 {
 
 .game-board {
     display: grid;
-    grid-template-columns: repeat(5, var(--tile-size)); /* Default, will be overridden by JS */
-    gap: var(--gap);
-    background-color: var(--board-bg);
-    padding: var(--gap);
+    grid-template-columns: repeat(5, calc(var(--tile-size) + var(--gap))); /* Default, will be overridden by JS */
+    gap: 0; /* No gap - handled by cell wrappers */
+    background-color: transparent;
+    padding: calc(var(--gap) / 2);
     border-radius: 12px;
     position: relative;
     touch-action: none; /* Prevent browser scrolling on the board */
     box-shadow: var(--shadow-lg);
+    overflow: hidden; /* Clip cell wrappers to rounded corners */
+}
+
+.cell-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--gap) / 2);
+    background-color: var(--board-bg);
+}
+
+.cell-wrapper.hole {
+    background-color: transparent;
 }
 
 .tile-slot {
@@ -195,10 +208,9 @@ h1 {
 
 .tile-slot.hole {
     background-color: transparent;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    border-radius: 50%; /* Make holes circular or just empty looking */
-    background-color: var(--hole-color);
-    opacity: 0.3;
+    box-shadow: none;
+    border-radius: 50%;
+    opacity: 1;
 }
 
 .tile {
