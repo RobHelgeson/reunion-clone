@@ -92,7 +92,9 @@ class PuzzleGenerator {
             // Sort slots by length (longer first)
             slots.sort((a, b) => b.len - a.len);
 
-            if (this.solveGrid(grid, slots, 0)) {
+            // Track used words to prevent duplicates in the same puzzle
+            const usedWords = new Set();
+            if (this.solveGrid(grid, slots, 0, usedWords)) {
                 return grid;
             }
         }
@@ -155,7 +157,7 @@ class PuzzleGenerator {
         return slots;
     }
 
-    solveGrid(grid, slots, index) {
+    solveGrid(grid, slots, index, usedWords) {
         if (index >= slots.length) return true; // All slots filled
 
         const slot = slots[index];
@@ -167,9 +169,9 @@ class PuzzleGenerator {
             else pattern += (grid[slot.r + i][slot.c] || '.');
         }
 
-        // Find candidates
+        // Find candidates (exclude words already used in this puzzle)
         const regex = new RegExp('^' + pattern + '$');
-        const candidates = (this.wordMap.get(slot.len) || []).filter(w => regex.test(w));
+        const candidates = (this.wordMap.get(slot.len) || []).filter(w => regex.test(w) && !usedWords.has(w));
 
         // Shuffle candidates for randomness
         this.shuffle(candidates);
@@ -190,12 +192,16 @@ class PuzzleGenerator {
                 }
             }
 
+            // Mark word as used
+            usedWords.add(word);
+
             // Recurse
-            if (this.solveGrid(grid, slots, index + 1)) {
+            if (this.solveGrid(grid, slots, index + 1, usedWords)) {
                 return true;
             }
 
-            // Backtrack
+            // Backtrack - remove word from used set
+            usedWords.delete(word);
             for(let k=0; k<slot.len; k++) {
                 if (slot.type === 'row') {
                     grid[slot.r][slot.c + k] = backup[k];
