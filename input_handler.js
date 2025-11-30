@@ -149,8 +149,15 @@ class InputHandler {
                 targetC = targetTile.c;
             }
         } else {
-            // Check if dropped on a slot
-            const slot = e.target.closest('.tile-slot');
+            // Try to find slot as ancestor or inside a cell-wrapper
+            let slot = e.target.closest('.tile-slot');
+            if (!slot) {
+                // If we hit a cell-wrapper (padding area), look for slot inside
+                const wrapper = e.target.closest('.cell-wrapper');
+                if (wrapper) {
+                    slot = wrapper.querySelector('.tile-slot');
+                }
+            }
             if (slot && !slot.classList.contains('hole')) {
                 targetR = parseInt(slot.dataset.r);
                 targetC = parseInt(slot.dataset.c);
@@ -171,7 +178,15 @@ class InputHandler {
                 targetC = targetTile.c;
             }
         } else {
-            const slot = el.closest('.tile-slot');
+            // Try to find slot as ancestor or inside a cell-wrapper
+            let slot = el.closest('.tile-slot');
+            if (!slot) {
+                // If we hit a cell-wrapper (padding area), look for slot inside
+                const wrapper = el.closest('.cell-wrapper');
+                if (wrapper) {
+                    slot = wrapper.querySelector('.tile-slot');
+                }
+            }
             if (slot && !slot.classList.contains('hole')) {
                 targetR = parseInt(slot.dataset.r);
                 targetC = parseInt(slot.dataset.c);
