@@ -1,8 +1,13 @@
 :root {
     --bg-color: #f0f2f5;
     --board-bg: #e4e6eb;
-    --tile-size: 60px;
+    /* Board-width-driven responsive layout */
+    --board-max-width: 400px;
+    --board-width: min(calc(100vw - 40px), var(--board-max-width));
     --gap: 8px;
+    --board-padding: 4px;
+    /* Derive tile size from board width: (board - padding*2 - gaps) / 5 cols */
+    --tile-size: calc((var(--board-width) - var(--board-padding) * 2 - 5 * var(--gap)) / 5);
     --text-color: #1a1a1a;
     --primary-color: #6366f1;
     --success-color: #22c55e; /* Green */
@@ -175,10 +180,12 @@ h1 {
 
 .game-board {
     display: grid;
-    grid-template-columns: repeat(5, calc(var(--tile-size) + var(--gap))); /* Default, will be overridden by JS */
+    grid-template-columns: repeat(5, calc(var(--tile-size) + var(--gap))); /* Will be overridden by JS */
     gap: 0; /* No gap - handled by cell wrappers */
     background-color: transparent;
-    padding: calc(var(--gap) / 2);
+    width: var(--board-width);
+    max-width: var(--board-max-width);
+    padding: var(--board-padding);
     border-radius: 12px;
     position: relative;
     touch-action: none; /* Prevent browser scrolling on the board */
@@ -608,12 +615,7 @@ h1 {
     100% { transform: rotate(360deg); }
 }
 
-/* Responsive adjustments */
-@media (max-width: 400px) {
-    :root {
-        --tile-size: 50px;
-    }
-}
+/* Responsive adjustments handled by board-width-driven layout */
 
 /* Refactored Inline Styles */
 .result-animal-icon {

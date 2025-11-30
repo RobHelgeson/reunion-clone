@@ -38,7 +38,26 @@ class ReunionGame {
 
         this.inputHandler.setupDragAndDrop(document.getElementById('game-board'));
         this.setupUIEventListeners();
+        this.setupResizeHandler();
         document.getElementById('loading-overlay').classList.add('hidden');
+    }
+
+    setupResizeHandler() {
+        // Reposition tiles when viewport changes (responsive layout)
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => this.repositionAllTiles(), 100);
+        });
+    }
+
+    repositionAllTiles() {
+        this.tiles.forEach(tile => {
+            const el = document.querySelector(`.tile[data-id="${tile.id}"]`);
+            if (el) {
+                this.updateTilePosition(el, tile.r, tile.c);
+            }
+        });
     }
 
     setupBoard() {
@@ -227,12 +246,18 @@ class ReunionGame {
     }
 
     updateTilePosition(el, r, c) {
-        // Read CSS custom properties to handle responsive sizing
+        // Read actual computed tile size from a rendered tile-slot element
+        // This handles calc() expressions from board-width-driven responsive layout
+        const slot = document.querySelector('.tile-slot');
+        if (!slot) return;
+
+        const size = slot.getBoundingClientRect().width;
         const styles = getComputedStyle(document.documentElement);
-        const size = parseInt(styles.getPropertyValue('--tile-size'));
         const gap = parseInt(styles.getPropertyValue('--gap'));
-        const x = c * (size + gap) + gap;
-        const y = r * (size + gap) + gap;
+        const padding = parseInt(styles.getPropertyValue('--board-padding')) || gap / 2;
+
+        const x = c * (size + gap) + padding;
+        const y = r * (size + gap) + padding;
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
     }
