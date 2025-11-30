@@ -256,8 +256,9 @@ class ReunionGame {
         const gap = parseInt(styles.getPropertyValue('--gap'));
         const padding = parseInt(styles.getPropertyValue('--board-padding')) || gap / 2;
 
-        const x = c * (size + gap) + padding;
-        const y = r * (size + gap) + padding;
+        // Account for: board padding + cell position + cell-wrapper internal padding (gap/2)
+        const x = c * (size + gap) + padding + gap / 2;
+        const y = r * (size + gap) + padding + gap / 2;
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
     }
