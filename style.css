@@ -195,16 +195,33 @@ h1 {
 }
 
 /* Punch through cell-wrapper background for holes to see the background image */
-/* Uses CSS mask to cut out only the content-box (tile-slot area), leaving the padding frame visible */
+/* Creates a frame mask with rounded inner corners using radial gradients at corners + linear edges */
 .cell-wrapper:has(.hole) {
+    --frame: calc(var(--gap) / 2);
+    --radius: 8px;
+    --corner-size: calc(var(--frame) + var(--radius));
+    --edge-length: calc(100% - 2 * var(--corner-size));
+
     -webkit-mask:
-        linear-gradient(#fff 0 0),
-        linear-gradient(#fff 0 0) content-box;
-    -webkit-mask-composite: xor;
+        /* Four corners with rounded inner edges */
+        radial-gradient(circle at bottom right, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) top left / var(--corner-size) var(--corner-size) no-repeat,
+        radial-gradient(circle at bottom left, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) top right / var(--corner-size) var(--corner-size) no-repeat,
+        radial-gradient(circle at top right, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) bottom left / var(--corner-size) var(--corner-size) no-repeat,
+        radial-gradient(circle at top left, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) bottom right / var(--corner-size) var(--corner-size) no-repeat,
+        /* Four edges connecting the corners */
+        linear-gradient(#fff, #fff) top center / var(--edge-length) var(--frame) no-repeat,
+        linear-gradient(#fff, #fff) bottom center / var(--edge-length) var(--frame) no-repeat,
+        linear-gradient(#fff, #fff) left center / var(--frame) var(--edge-length) no-repeat,
+        linear-gradient(#fff, #fff) right center / var(--frame) var(--edge-length) no-repeat;
     mask:
-        linear-gradient(#fff 0 0),
-        linear-gradient(#fff 0 0) content-box;
-    mask-composite: exclude;
+        radial-gradient(circle at bottom right, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) top left / var(--corner-size) var(--corner-size) no-repeat,
+        radial-gradient(circle at bottom left, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) top right / var(--corner-size) var(--corner-size) no-repeat,
+        radial-gradient(circle at top right, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) bottom left / var(--corner-size) var(--corner-size) no-repeat,
+        radial-gradient(circle at top left, transparent var(--radius), #fff calc(var(--radius) + 0.5px)) bottom right / var(--corner-size) var(--corner-size) no-repeat,
+        linear-gradient(#fff, #fff) top center / var(--edge-length) var(--frame) no-repeat,
+        linear-gradient(#fff, #fff) bottom center / var(--edge-length) var(--frame) no-repeat,
+        linear-gradient(#fff, #fff) left center / var(--frame) var(--edge-length) no-repeat,
+        linear-gradient(#fff, #fff) right center / var(--frame) var(--edge-length) no-repeat;
 }
 
 /* Outer corner rounding for the 4 corners of the board */
