@@ -48,11 +48,20 @@ class ReunionGame {
 
         board.innerHTML = '';
 
+        const lastRow = this.gridSize.rows - 1;
+        const lastCol = this.gridSize.cols - 1;
+
         for (let r = 0; r < this.gridSize.rows; r++) {
             for (let c = 0; c < this.gridSize.cols; c++) {
                 // Create wrapper div for each cell (provides background)
                 const wrapper = document.createElement('div');
                 wrapper.className = 'cell-wrapper';
+
+                // Add corner classes for outer board corners
+                if (r === 0 && c === 0) wrapper.classList.add('corner-tl');
+                if (r === 0 && c === lastCol) wrapper.classList.add('corner-tr');
+                if (r === lastRow && c === 0) wrapper.classList.add('corner-bl');
+                if (r === lastRow && c === lastCol) wrapper.classList.add('corner-br');
 
                 const slot = document.createElement('div');
                 slot.className = 'tile-slot';
@@ -60,7 +69,6 @@ class ReunionGame {
                 slot.dataset.c = c;
 
                 if (this.isHole(r, c)) {
-                    wrapper.classList.add('hole');
                     slot.classList.add('hole');
                 }
 

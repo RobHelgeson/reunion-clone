@@ -194,8 +194,20 @@ h1 {
     background-color: var(--board-bg);
 }
 
-.cell-wrapper.hole {
-    background-color: transparent;
+/* Holes keep board background - the hole effect comes from transparent tile-slot inside */
+
+/* Outer corner rounding for the 4 corners of the board */
+.cell-wrapper.corner-tl {
+    border-top-left-radius: 8px;
+}
+.cell-wrapper.corner-tr {
+    border-top-right-radius: 8px;
+}
+.cell-wrapper.corner-bl {
+    border-bottom-left-radius: 8px;
+}
+.cell-wrapper.corner-br {
+    border-bottom-right-radius: 8px;
 }
 
 .tile-slot {
@@ -209,8 +221,7 @@ h1 {
 .tile-slot.hole {
     background-color: transparent;
     box-shadow: none;
-    border-radius: 50%;
-    opacity: 1;
+    border-radius: 8px; /* Same as tiles - looks like invisible tile slot */
 }
 
 .tile {
