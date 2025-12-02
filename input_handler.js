@@ -129,12 +129,30 @@ class InputHandler {
             const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
             tileEl.style.display = ''; // Restore
 
+            // Clean up drag styles before move (render() reuses elements now)
+            tileEl.classList.remove('dragging');
+            tileEl.style.transition = '';
+
             const { r, c } = this.getTargetFromElement(targetEl);
             this.game.attemptMove(this.game.draggedTile, r, c);
 
             this.game.draggedTile = null;
-            // Re-render will restore transitions and snap to grid
+            // Re-render will snap to grid with CSS transitions
             this.game.render();
+        });
+
+        // Handle touch cancel (e.g., phone call, palm rejection)
+        board.addEventListener('touchcancel', (e) => {
+            if (!this.game.draggedTile) return;
+
+            const tileEl = document.querySelector(`.tile[data-id="${this.game.draggedTile.id}"]`);
+            if (tileEl) {
+                tileEl.classList.remove('dragging');
+                tileEl.style.transition = '';
+            }
+
+            this.game.draggedTile = null;
+            this.game.render(); // Snap back to original position
         });
     }
 
