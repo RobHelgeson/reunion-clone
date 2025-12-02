@@ -20,6 +20,7 @@ class ReunionGame {
         this.inputHandler = new InputHandler(this);
         this.soundManager = new SoundManager();
         this.correctTiles = new Set(); // Track which tiles are currently correct
+        this.yellowTiles = new Set(); // Track which tiles are currently yellow
         this.completedWords = new Set(); // Track which words are fully complete
 
         this.applyTheme();
@@ -103,6 +104,9 @@ class ReunionGame {
 
     async loadLevel() {
         this.tiles = [];
+        this.correctTiles.clear();
+        this.yellowTiles.clear();
+        this.completedWords.clear();
 
         // Try to generate a puzzle
         let grid = null;
@@ -223,23 +227,26 @@ class ReunionGame {
 
     render(silent = false) {
         const board = document.getElementById('game-board');
-        const existingTiles = document.querySelectorAll('.tile');
-        existingTiles.forEach(t => t.remove());
 
         this.tiles.forEach(tile => {
-            const el = document.createElement('div');
-            el.className = `tile ${tile.type}`;
-            if (tile.id === 'fox') el.classList.add('fox');
-            if (tile.id === 'hedgehog') el.classList.add('hedgehog');
+            let el = document.querySelector(`.tile[data-id="${tile.id}"]`);
 
-            el.textContent = tile.char;
-            el.dataset.id = tile.id;
+            // Create element only if it doesn't exist
+            if (!el) {
+                el = document.createElement('div');
+                el.className = `tile ${tile.type}`;
+                if (tile.id === 'fox') el.classList.add('fox');
+                if (tile.id === 'hedgehog') el.classList.add('hedgehog');
 
+                el.textContent = tile.char;
+                el.dataset.id = tile.id;
+                el.draggable = true;
+
+                board.appendChild(el);
+            }
+
+            // Update position (CSS transition will animate smoothly)
             this.updateTilePosition(el, tile.r, tile.c);
-
-            el.draggable = true;
-
-            board.appendChild(el);
         });
 
         this.updateColors(silent);
@@ -394,40 +401,45 @@ class ReunionGame {
     updateColors(silent = false) {
         // Track which tiles were already correct BEFORE this update
         const previouslyCorrect = new Set(this.correctTiles);
+        const previouslyYellow = new Set(this.yellowTiles || []);
         const previouslyCompleteWords = new Set(this.completedWords);
 
-        // Clear the current sets
-        this.correctTiles.clear();
-        this.completedWords.clear();
-
-        // Reset classes
-        document.querySelectorAll('.tile').forEach(el => {
-            el.classList.remove('correct', 'present');
-        });
-
+        // Calculate new colors
         const { greens, yellows } = GameRules.calculateColors(this.tiles, this.solutionGrid, this.gridSize);
+
+        // Update the current sets
+        this.correctTiles = new Set(greens);
+        this.yellowTiles = new Set(yellows);
+        this.completedWords = new Set();
 
         // Track newly green tiles for sound effect
         let hasNewGreens = false;
 
-        greens.forEach(id => {
-            const el = document.querySelector(`.tile[data-id="${id}"]`);
-            if(el) {
-                // Add to current correct set
-                this.correctTiles.add(id);
+        // Update only tiles whose status changed
+        this.tiles.forEach(tile => {
+            if (tile.isAnimal) return;
 
-                // Check if this is newly green (wasn't in the previous set)
-                if (!previouslyCorrect.has(id)) {
-                    hasNewGreens = true;
-                }
+            const el = document.querySelector(`.tile[data-id="${tile.id}"]`);
+            if (!el) return;
+
+            const wasGreen = previouslyCorrect.has(tile.id);
+            const wasYellow = previouslyYellow.has(tile.id);
+            const isGreen = greens.has(tile.id);
+            const isYellow = yellows.has(tile.id) && !isGreen;
+
+            // Only modify classes if status changed
+            if (isGreen && !wasGreen) {
                 el.classList.add('correct');
+                el.classList.remove('present');
+                hasNewGreens = true;
+            } else if (!isGreen && wasGreen) {
+                el.classList.remove('correct');
             }
-        });
 
-        yellows.forEach(id => {
-            const el = document.querySelector(`.tile[data-id="${id}"]`);
-            if (el && !el.classList.contains('correct')) {
+            if (isYellow && !wasYellow) {
                 el.classList.add('present');
+            } else if (!isYellow && wasYellow) {
+                el.classList.remove('present');
             }
         });
 
@@ -596,6 +608,11 @@ class ReunionGame {
             this.solutionGrid = state.solutionGrid;
             this.tiles = state.tiles;
             this.moves = state.moves;
+
+            // Reset tracking sets for fresh color calculation
+            this.correctTiles.clear();
+            this.yellowTiles.clear();
+            this.completedWords.clear();
 
             // Setup board DOM elements first
             this.setupBoard();
