@@ -7,61 +7,44 @@ class SoundManager {
         this.audioContext = null;
         this.enabled = this.loadPreference();
         // Don't create AudioContext here - browsers suspend it when created without user interaction
-        // Instead, create it lazily on first sound play (which happens on user interaction)
-
-        // Set up early warm-up on first user interaction with the page
-        // This ensures AudioContext is ready before any game sounds need to play
-        this.setupEarlyWarmUp();
+        // Instead, create it lazily via warmUp() called from drag/touch handlers
     }
 
     /**
-     * Set up listeners to warm up AudioContext on first user interaction
-     * This catches interactions that happen before dragging (e.g., clicking the page)
-     */
-    setupEarlyWarmUp() {
-        const warmUpOnce = () => {
-            this.warmUp();
-            // Remove listeners after first use - only need to warm up once
-            document.removeEventListener('click', warmUpOnce);
-            document.removeEventListener('touchstart', warmUpOnce);
-            document.removeEventListener('mousedown', warmUpOnce);
-        };
-
-        document.addEventListener('click', warmUpOnce);
-        document.addEventListener('touchstart', warmUpOnce);
-        document.addEventListener('mousedown', warmUpOnce);
-    }
-
-    /**
-     * Lazily create and resume the AudioContext on first use
-     * Must be called from a user interaction handler to work properly
+     * Check if AudioContext is ready to play sounds
+     * Returns true only if the context exists and is in 'running' state.
+     *
+     * Note: warmUp() should have been called on dragstart/touchstart to prepare
+     * the context. If the context isn't running yet, we skip the sound rather
+     * than trying to create/resume here (which may not work outside user gesture).
      */
     ensureAudioContext() {
         if (!this.audioContext) {
-            try {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {
-                console.warn('Web Audio API not supported', e);
-                return false;
-            }
+            // Context should have been created by warmUp() on drag/touch start
+            // If not, we can't reliably create it here (may be outside user gesture)
+            return false;
         }
 
-        // Resume if suspended (this works because we're called from user interaction)
+        // If still suspended, try to resume (might not work outside user gesture)
+        // but don't block on it - just return whether we're ready now
         if (this.audioContext.state === 'suspended') {
             this.audioContext.resume();
         }
 
-        return this.audioContext.state !== 'closed';
+        // Only return true if actually running - this prevents silent failures
+        return this.audioContext.state === 'running';
     }
 
     /**
      * Warm up the audio context on user interaction (before sounds are needed)
      * Call this on dragstart/touchstart to ensure audio is ready by the time
      * we need to play sounds (on drop/touchend)
+     *
+     * IMPORTANT: This always prepares the AudioContext regardless of the enabled state.
+     * The enabled flag only controls whether sounds actually play, not whether
+     * the context exists. This ensures the context is ready when users enable sounds.
      */
     warmUp() {
-        if (!this.enabled) return;
-
         if (!this.audioContext) {
             try {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
