@@ -293,14 +293,14 @@ class ReunionGame {
         });
 
         document.getElementById('sound-toggle').addEventListener('change', (e) => {
-            // Warm up audio context before toggling (in case this is the first sound)
+            // Toggle the sound preference
+            this.soundManager.toggle();
+
+            // When enabling sound, warm up the audio context and play a test sound
+            // The click on the toggle is a user gesture, so warmUp() will work here
             if (e.target.checked) {
                 this.soundManager.warmUp();
-            }
-            this.soundManager.toggle();
-            // Play a test sound when enabling
-            if (e.target.checked) {
-                // Small delay to ensure audio context is ready
+                // Small delay to ensure audio context has time to resume
                 setTimeout(() => this.soundManager.playTileMove(), 50);
             }
         });
