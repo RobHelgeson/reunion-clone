@@ -207,8 +207,7 @@ h1 {
     --frame: calc(var(--gap) / 2);
     --radius: 8px;
     --corner-size: calc(var(--frame) + var(--radius));
-    /* Add 2px overlap to prevent subpixel gaps between corners and edges */
-    --edge-length: calc(100% - 2 * var(--corner-size) + 2px);
+    --edge-length: calc(100% - 2 * var(--corner-size));
 
     -webkit-mask:
         /* Four corners with rounded inner edges */
