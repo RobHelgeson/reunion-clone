@@ -108,6 +108,9 @@ class ReunionGame {
         this.yellowTiles.clear();
         this.completedWords.clear();
 
+        // Remove old tile DOM elements (IDs get reused between puzzles)
+        document.querySelectorAll('.tile').forEach(el => el.remove());
+
         // Try to generate a puzzle
         let grid = null;
         let attempts = 0;
@@ -407,9 +410,9 @@ class ReunionGame {
         // Calculate new colors
         const { greens, yellows } = GameRules.calculateColors(this.tiles, this.solutionGrid, this.gridSize);
 
-        // Update the current sets
+        // Update the current sets - only track actually displayed yellows (exclude greens)
         this.correctTiles = new Set(greens);
-        this.yellowTiles = new Set(yellows);
+        this.yellowTiles = new Set([...yellows].filter(id => !greens.has(id)));
         this.completedWords = new Set();
 
         // Track newly green tiles for sound effect
