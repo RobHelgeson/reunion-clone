@@ -231,6 +231,15 @@ class ReunionGame {
     render(silent = false) {
         const board = document.getElementById('game-board');
 
+        // Clean up any stale drag styles (defensive - handles edge cases)
+        const currentDragId = this.draggedTile?.id;
+        document.querySelectorAll('.tile.dragging').forEach(el => {
+            if (el.dataset.id !== currentDragId) {
+                el.classList.remove('dragging');
+                el.style.transition = '';
+            }
+        });
+
         this.tiles.forEach(tile => {
             let el = document.querySelector(`.tile[data-id="${tile.id}"]`);
 
